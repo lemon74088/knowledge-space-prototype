@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Knowledge Space · 原型 V0.1</title>
 <meta name="description" content="個人知識管理與研究記錄系統 — 本地優先原型">
 <meta name="theme-color" content="#F6F4FB">
@@ -29,9 +29,9 @@
   --font-serif:"Songti TC","Songti SC","Noto Serif TC","Source Han Serif TC","SimSun",serif;
 }
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
+html{-webkit-text-size-adjust:100%;touch-action:manipulation}
 body{
-  margin:0; min-height:100vh; color:var(--ink); background:var(--canvas);
+  margin:0; min-height:100vh; color:var(--ink); background:var(--canvas); touch-action:manipulation;
   font-family:var(--font-sans); font-size:15px; line-height:1.68; letter-spacing:.012em;
   -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
   background-image:
@@ -297,6 +297,10 @@ a{color:var(--lav-deep);text-decoration:none}
 .tcard em small{font-size:10.5px;color:var(--ink3);font-weight:400;margin-left:2px}
 @media(min-width:620px){ .tcards{grid-template-columns:repeat(4,minmax(0,1fr))} }
 @media(min-width:760px){ .stage{max-width:580px;margin-left:auto;margin-right:auto} }
+/* 桌面寬欄：資料庫（卡片格）與圖譜（力導向畫布）使用較寬內容欄 */
+@media(min-width:980px){
+  .stage:has(#v-library.on), .stage:has(#v-graph.on){width:100%;max-width:1060px}
+}
 
 /* 新增資料面板 */
 .nn-l{display:block;font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--ink3);margin:14px 0 6px}
@@ -479,6 +483,11 @@ body.bar-on .shell{padding-bottom:184px}
 .blk.blk-h2.sh{text-shadow:0 1px 0 rgba(255,255,255,.9),0 8px 20px rgba(72,50,150,.18)}
 /* HTML 區塊 */
 .blk-html{font-size:13px;line-height:1.85;color:var(--ink);word-break:break-word}
+/* 行動端：輸入類元素一律 ≥16px，避免 iOS Safari 聚焦時自動放大畫面 */
+@media(max-width:979.9px){
+  input,textarea,select{font-size:16px !important}
+  .blk-p,.blk-quote,.blk-html,[contenteditable]{font-size:16px}
+}
 .blk-html p{margin:0 0 9px}
 .blk-html h1,.blk-html h2,.blk-html h3,.blk-html h4{margin:14px 0 8px;font-size:15px;font-weight:600;letter-spacing:-.01em}
 .blk-html h1{font-size:18px}
@@ -573,6 +582,89 @@ body.bar-on .shell{padding-bottom:184px}
 .gnote .gn-open{flex:none;font-size:11.5px;font-weight:600;color:#fff;background:var(--lav);border:0;border-radius:8px;padding:7px 15px;min-height:32px}
 .gnote .gn-tip{font-size:11px;color:var(--ink3);line-height:1.55}
 
+
+/* 資料庫：顯示模式切換 */
+.lmode{display:flex;gap:6px;margin:0 2px 12px}
+.lm-opt{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);background:var(--paper);color:var(--ink2);border-radius:9px;padding:6px 11px;font-size:11.5px;font-weight:600;min-height:30px;transition:border-color .15s, background .15s}
+.lm-opt:hover{border-color:rgba(103,85,222,.4)}
+.lm-opt.on{background:var(--mist);border-color:rgba(103,85,222,.45);color:var(--lav-deep)}
+
+/* 收藏星標 */
+.fav-star{color:#C9A227;fill:#F2D06B;flex:none}
+.lc-fav{position:absolute;top:8px;left:8px;display:flex;align-items:center;color:#C9A227}
+.lc-fav svg{fill:#F2D06B;filter:drop-shadow(0 1px 2px rgba(201,162,39,.4))}
+.is-fav .lc-kind{background:rgba(242,208,107,.92);border-color:rgba(201,162,39,.5);color:#7A5E0B}
+.lcard.is-fav{border-color:rgba(201,162,39,.45)}
+.lcard.is-fav .lc-stage{background:radial-gradient(circle at 32% 22%,rgba(242,208,107,.34),rgba(201,162,39,.10) 72%)}
+.row.is-fav .row-ico{background:rgba(242,208,107,.24);color:#8A6D12;box-shadow:inset 0 0 0 1px rgba(201,162,39,.4)}
+
+/* 精簡模式：單行緊湊列 */
+.lrow-compact{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:var(--paper);border:0;border-bottom:1px solid var(--line2);padding:8px 4px;min-height:38px}
+.lrow-compact .cdot{width:8px;height:8px;border-radius:50%;flex:none}
+.lrow-compact .ctitle{flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lrow-compact .cmeta{flex:none;font-size:10.5px;color:var(--ink4);white-space:nowrap}
+.lrow-compact .cfav{flex:none;display:none}
+.lrow-compact.is-fav .cfav{display:inline-flex;color:#C9A227}
+.lrow-compact.is-fav .cfav svg{fill:#F2D06B}
+
+/* 設定：字體大小選項 */
+.fs-opts{display:flex;gap:6px;flex:none}
+.fs-opt{border:1px solid var(--line);background:var(--paper);color:var(--ink2);border-radius:9px;padding:7px 12px;font-size:12px;font-weight:600;min-height:34px;transition:border-color .15s, background .15s}
+.fs-opt:hover{border-color:rgba(103,85,222,.4)}
+.fs-opt.on{background:var(--lav);border-color:var(--lav);color:#fff}
+
+/* 筆記頁：空白處滑動切換類型提示（桌面隱藏） */
+.swipe-hint{display:none;margin:10px 2px 0;font-size:10.5px;color:var(--ink4);text-align:center;letter-spacing:.03em}
+@media(max-width:979.9px){ .swipe-hint{display:block} }
+
+/* ===== 資料庫篩選面板：預設收合，點開才選擇（手機端省空間） ===== */
+.libfilter{margin-top:12px}
+/* r11：類型/分類/標籤 單行三段式膠囊 */
+.lf-row3{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.lf-seg{display:flex;align-items:center;justify-content:center;gap:5px;background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:var(--sh);padding:7px 5px;min-height:40px;min-width:0;text-align:center;transition:border-color .16s,background .16s}
+.lf-seg:hover{border-color:rgba(103,85,222,.35)}
+.lf-seg .lf-t{font-size:12px;font-weight:700;color:var(--ink1);flex:none;letter-spacing:.02em}
+.lf-seg .lf-chips{flex:0 1 auto;min-width:0;display:flex;gap:4px;overflow:hidden;align-items:center}
+.lf-seg .lf-chip{padding:2px 7px;font-size:10px;min-height:0}
+.lf-seg .lf-chip::after{font-size:8px}
+.lf-seg[aria-expanded="true"]{border-color:var(--lav);background:var(--mist)}
+.lf-seg[aria-expanded="true"] .lf-t{color:var(--lav-deep)}
+.lf-seg.f-on{border-color:rgba(201,162,39,.6);background:rgba(201,162,39,.07)}
+.lf-chips{flex:1;min-width:0;display:flex;gap:5px;overflow:hidden;align-items:center}
+.lf-chip{flex:none;display:inline-flex;align-items:center;gap:4px;background:var(--mist);color:var(--lav-deep);border:0;border-radius:7px;padding:4px 9px;font-size:10.5px;font-weight:600;min-height:24px}
+.lf-chip::after{content:'✕';font-size:9px;opacity:.55;margin-left:2px}
+.lf-chip:hover{background:var(--mist2)}
+.lf-none{font-size:11px;color:var(--ink4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lf-arr{flex:none;color:var(--ink4);transition:transform .22s}
+.lf-seg[aria-expanded="true"] .lf-arr{transform:rotate(180deg)}
+.lf-panel{margin-top:10px}
+.lf-panel[hidden]{display:none}
+
+/* ===== 資料庫卡片格（kittenjam Motion Library 式排列） ===== */
+.lsec-head{display:flex;align-items:center;gap:8px;margin:18px 2px 10px}
+.lsec-head .dot{width:9px;height:9px;border-radius:50%;flex:none}
+.lsec-head b{font-size:13.5px;font-weight:700;color:var(--ink1);letter-spacing:.02em}
+.lsec-head span{font-size:11px;color:var(--ink4)}
+.lgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:14px}
+@media(min-width:980px){ .lgrid{gap:18px} }
+.swipe.lc-swipe{border-bottom:0;border-radius:18px}
+.swipe.lc-swipe .swipe-act{border-radius:0 16px 16px 0;width:86px;justify-content:center;padding-right:16px}
+.lcard{
+  position:relative;z-index:1;display:flex;flex-direction:column;width:100%;text-align:left;min-width:0;
+  background:var(--paper);border:1px solid var(--line);border-radius:18px;overflow:hidden;
+  box-shadow:var(--sh);touch-action:pan-y;transition:transform .2s ease, box-shadow .2s ease, border-color .2s
+}
+.lcard:hover{transform:translateY(-3px);box-shadow:0 14px 30px -18px rgba(50,36,130,.45);border-color:var(--line2)}
+.lc-stage{aspect-ratio:16/9;position:relative;display:grid;place-items:center;overflow:hidden}
+.lc-glyph{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;font-size:20px;font-weight:800;color:#fff;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.5)}
+.lc-kind{position:absolute;top:8px;right:8px;font-size:10px;font-weight:700;letter-spacing:.04em;color:rgba(255,255,255,.97);background:rgba(255,255,255,.28);border:1px solid rgba(255,255,255,.42);border-radius:7px;padding:2px 7px;backdrop-filter:blur(3px)}
+.lc-sel{position:absolute;top:7px;left:7px}
+.lcard.sel-on{outline:2px solid var(--lav);outline-offset:-2px}
+.lc-body{padding:10px 12px 12px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.lc-title{font-size:13.5px;font-weight:700;color:var(--ink1);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lc-meta{font-size:10.5px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lc-tags{font-size:10.5px;color:var(--lav-deep);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
 /* 列表左滑刪除 */
 .swipe{position:relative;overflow:hidden;border-bottom:1px solid var(--line2)}
 .swipe:last-child{border-bottom:0}
@@ -624,6 +716,15 @@ body.bar-on .shell{padding-bottom:184px}
 .spacer{height:8px}
 .noscroll{overflow:hidden}
 </style>
+<script>
+/* 力導向圖譜引擎：開源 vasturiano/force-graph（CDN）。載入成功後重繪圖譜；載入失敗自動退回靜態 SVG 版 */
+(function(){
+  var s=document.createElement('script');
+  s.src='https://cdn.jsdelivr.net/npm/force-graph@1.52.0/dist/force-graph.min.js';
+  s.onload=function(){ try{ if(typeof renderGraph==='function') renderGraph(); }catch(e){} };
+  document.head.appendChild(s);
+})();
+</script>
 </head>
 <body>
 <div class="shell">
@@ -640,7 +741,7 @@ body.bar-on .shell{padding-bottom:184px}
           <stop stop-color="#8E7DF2"/><stop offset="1" stop-color="#5A47D6"/>
         </linearGradient></defs>
       </svg>
-      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1 · r4</span></div>
+      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1 · r11</span></div>
       <button class="rail-toggle" id="railToggle" aria-label="收合側欄" title="收合側欄">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 6.5L9 12l5.5 5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
@@ -779,6 +880,7 @@ body.bar-on .shell{padding-bottom:184px}
         <div class="notes-tools">
           <div class="chipbar grow" id="notesChips" style="padding-top:6px"></div>
         </div>
+        <div class="swipe-hint">⇠ 空白處左右滑動可切換類型 ⇢</div>
         <div class="rows" style="margin-top:10px" id="noteRows"></div>
       </section>
 
@@ -790,25 +892,54 @@ body.bar-on .shell{padding-bottom:184px}
           <button class="icon-btn" id="btnSelLib" aria-label="選取" aria-pressed="false">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="15" height="15"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8.5 12.2l2.6 2.6 4.6-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
+          <button class="icon-btn" id="btnFavLib" aria-label="收藏">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="15" height="15"><path d="M12 4l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.6-4.8 2.6.9-5.4-3.9-3.8 5.4-.8L12 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
           <button class="icon-btn" id="btnSearchFromLib" aria-label="搜尋">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="15" height="15"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 20 20" stroke-linecap="round"/></svg>
           </button>
         </div>
-        <div class="tcards" id="typeCards"></div>
-
-        <div class="block">
-          <div class="block-head"><h2>我的分類<em>依筆數排序</em></h2></div>
-          <div class="rows" id="catRows"></div>
-        </div>
-
-        <div class="block">
-          <div class="block-head"><h2>標籤<em>第二層索引 · 可多個</em></h2><span class="link-more" id="tagFilterHint">點標籤可篩選</span></div>
-          <div class="tagwall" id="tagWall"></div>
+        <div class="libfilter">
+          <div class="lf-row3">
+          <button class="lf-seg" data-lfsec="type" aria-expanded="false">
+            <span class="lf-t">類型</span>
+            <span class="lf-chips" id="lfSumType"></span>
+            <svg class="lf-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="13" height="13"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="lf-seg" data-lfsec="cat" aria-expanded="false">
+            <span class="lf-t">分類</span>
+            <span class="lf-chips" id="lfSumCat"></span>
+            <svg class="lf-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="13" height="13"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="lf-seg" data-lfsec="tag" aria-expanded="false">
+            <span class="lf-t">標籤</span>
+            <span class="lf-chips" id="lfSumTag"></span>
+            <svg class="lf-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="13" height="13"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          </div>
+          <div class="lf-panel" data-lfpanel="type" hidden><div class="tcards" id="typeCards"></div></div>
+          <div class="lf-panel" data-lfpanel="cat" hidden>
+            <div class="block">
+              <div class="block-head"><h2>我的分類<em>依筆數排序</em></h2></div>
+              <div class="rows" id="catRows"></div>
+            </div>
+          </div>
+          <div class="lf-panel" data-lfpanel="tag" hidden>
+            <div class="block">
+              <div class="block-head"><h2>標籤<em>第二層索引 · 可多個</em></h2><span class="link-more" id="tagFilterHint">點標籤可篩選</span></div>
+              <div class="tagwall" id="tagWall"></div>
+            </div>
+          </div>
         </div>
 
         <div class="block">
           <div class="block-head"><h2 id="libListTitle">全部資料</h2><span class="link-more" id="libFilterHint">點上方卡片可篩選</span></div>
-          <div class="rows" id="libRows"></div>
+          <div class="lmode" id="libMode">
+            <button class="lm-opt" data-lmode="card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="15" height="15"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>卡片</button>
+            <button class="lm-opt" data-lmode="list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="15" height="15"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round"/></svg>清單</button>
+            <button class="lm-opt" data-lmode="compact"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="15" height="15"><path d="M4 7h16M4 17h16" stroke-linecap="round"/></svg>精簡</button>
+          </div>
+          <div id="libRows"></div>
         </div>
       </section>
 
@@ -830,7 +961,7 @@ body.bar-on .shell{padding-bottom:184px}
           <span><i style="background:#39836A"></i>資料類別</span>
           <span style="margin-left:auto">點節點開啟原始筆記</span>
         </div>
-        <div class="hintline">V0.1 網絡圖：外圈大圓是分類，周圍小點是該分類下的資料，顏色區分類型，虛線是已建立關聯；點小點看標題再開啟。拖曳與縮放於 P4 落地。</div>
+        <div class="hintline">V0.1 圖譜：中心綠色大圓是研究平台，黃色大圓是分類，周圍小點是該分類下的資料，顏色區分類型，虛線流動是已建立關聯；可拖曳節點、滾輪縮放、拖曳空白處平移。</div>
       </section>
 
       <!-- ================= 研究中心 ================= -->
@@ -871,6 +1002,13 @@ body.bar-on .shell{padding-bottom:184px}
         </div>
 
         <div class="sgroup" style="margin-top:12px">
+          <h3>顯示</h3>
+          <div class="srow"><div class="s-main"><b>字體大小</b><span>全 App 縮放顯示，立即套用並記住</span></div>
+            <div class="fs-opts" id="fontScaleOpts"></div>
+          </div>
+        </div>
+
+        <div class="sgroup">
           <h3>資料儲存</h3>
           <div class="srow"><div class="s-main"><b>IndexedDB · knowledge_space_v01</b><span>本機瀏覽器資料庫</span></div><span class="s-val" id="setDbCount">—</span></div>
           <div class="srow"><div class="s-main"><b>繁體索引 / 簡體索引</b><span>雙索引並存，原始文字不被覆蓋</span></div><span class="s-val" style="color:var(--jade)">已建立</span></div>
@@ -892,10 +1030,23 @@ body.bar-on .shell{padding-bottom:184px}
 
         <div class="sgroup">
           <h3>關於</h3>
-          <div class="srow"><div class="s-main"><b>Knowledge Space · 原型 V0.1 · r4</b><span>單檔 HTML + IndexedDB，原生 JS</span></div><span class="s-val">2026-11-12</span></div>
+          <div class="srow"><div class="s-main"><b>Knowledge Space · 原型 V0.1 · r11</b><span>單檔 HTML + IndexedDB，原生 JS</span></div><span class="s-val">2026-11-12</span></div>
           <div class="srow"><div class="s-main"><b>正式版技術棧</b><span>React · TypeScript · Vite · Dexie · Orama · XYFlow · OpenCC</span></div><span class="s-val" style="color:var(--ink4)">規劃中</span></div>
         </div>
         <div class="hintline">提醒：iPhone Safari 若長期未開啟，可能回收網站資料。備份是唯一保險，請定期匯出。</div>
+      </section>
+
+      <!-- ================= 收藏 ================= -->
+      <section class="view" id="v-favorites">
+        <div class="page-head">
+          <button class="back" data-go="home" aria-label="返回"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="15" height="15"><path d="M15 5l-7 7 7 7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <h1>收藏<small>重要資料的星標清單</small></h1>
+          <button class="icon-btn" id="btnSelFav" aria-label="選取" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="15" height="15"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8.5 12.2l2.6 2.6 4.6-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <div class="hintline" style="margin-top:12px">在筆記內點右上角的星星即可加入／取消收藏；收藏的資料在清單與卡片上都會以金色星標顯示。</div>
+        <div id="favRows"></div>
       </section>
 
       <!-- ================= 筆記編輯器 ================= -->
@@ -1026,7 +1177,13 @@ function convertWithMap(str, chars, phrases){
       if(from && str.startsWith(from,i)){ hit={from:from,to:to}; break; }
     }
     if(hit){
-      for(const ch of hit.to.split('')){ out.push(ch); map.push(i); }
+      /* 詞組組轉換：輸出字元索引均勻分布在來源詞組上，
+         讓 snippet 高亮能對應回原文的完整詞組範圍 */
+      const fl=hit.from.length, chs=hit.to.split(''), tl=chs.length;
+      for(let j=0;j<tl;j++){
+        out.push(chs[j]);
+        map.push(i + (tl===1 ? 0 : Math.min(fl-1, Math.floor(j*fl/tl))));
+      }
       i += hit.from.length; continue;
     }
     const ch=str[i];
@@ -1296,6 +1453,7 @@ const NAV=[
   {v:'home', label:'首頁', icon:'<path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1V10.5Z" stroke-linecap="round"/>'},
   {v:'search', label:'全域搜尋', icon:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 20 20" stroke-linecap="round"/>'},
   {v:'notes', label:'筆記', icon:'<rect x="4.5" y="3.5" width="15" height="17" rx="2"/><path d="M8 8h8M8 12h8M8 16h5" stroke-linecap="round"/>'},
+  {v:'favorites', label:'收藏', icon:'<path d="M12 4l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.6-4.8 2.6.9-5.4-3.9-3.8 5.4-.8L12 4" stroke-linecap="round" stroke-linejoin="round"/>'},
   {v:'library', label:'資料庫', icon:'<path d="M4 6h6l2 2h8v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6Z" stroke-linecap="round"/>'},
   {v:'graph', label:'知識圖譜', icon:'<circle cx="12" cy="12" r="3"/><circle cx="12" cy="4" r="1.8"/><circle cx="20" cy="15.5" r="1.8"/><circle cx="4" cy="15.5" r="1.8"/><path d="M12 8v1M14 13.6l4 1M10 13.6l-4 1" stroke-linecap="round"/>'},
   {v:'research', label:'研究中心', icon:'<path d="M8.5 3h7v4l3 10a2 2 0 0 1-1.9 2.6H7.4A2 2 0 0 1 5.5 17l3-10V3" stroke-linecap="round"/><path d="M6.4 14h11.2" stroke-linecap="round"/>'},
@@ -1338,6 +1496,7 @@ function go(view, opts){
   if(view==='search') { renderSearch(); setTimeout(()=>$('#qInput').focus(),80); }
   if(view==='notes') renderNotes();
   if(view==='library') renderLibrary();
+  if(view==='favorites') renderFavorites();
   if(view==='graph') renderGraph();
   if(view==='research') renderResearch();
   if(view==='settings') renderSettings();
@@ -1428,6 +1587,38 @@ function rowHTML(note, extra, sel){
     '</span>'+
     end+
   '</button></div>';
+}
+function hexA(hex,a){
+  const h=String(hex).replace('#','');
+  const n=parseInt(h.length===3? h.split('').map(function(c){ return c+c; }).join(''):h,16);
+  return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')';
+}
+/* kittenjam 式資料卡：16:9 預覽區 + 標題 + 分類/時間 + 標籤；保留滑動刪除(data-sid)、開啟(data-open)與選取模式 */
+function cardHTML(note, sel){
+  const c=typeColor(note.type);
+  const on = !!(sel && state.selected && state.selected[note.id]);
+  const glyph=TYPE_ICON[note.type]||'記';
+  const tags=(note.tags&&note.tags.length)
+    ? '<span class="lc-tags">'+note.tags.slice(0,3).map(function(t){ return '#'+esc(t); }).join(' ')+((note.tags.length>3)?' +'+(note.tags.length-3):'')+'</span>'
+    : '';
+  const selbox= sel
+    ? '<span class="selbox lc-sel'+(on?' on':'')+'">'+svgIco('<path d="M9.6 12.6l2 2 3.4-4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>')+'</span>'
+    : '';
+  const fv=note.favorite?' is-fav':'';
+  return '<div class="swipe lc-swipe" data-sid="'+note.id+'"><div class="swipe-act">刪除</div>'+
+    '<button class="lcard'+(on?' sel-on':'')+fv+'" data-open="'+note.id+'">'+
+      '<span class="lc-stage" style="background:radial-gradient(circle at 32% 22%,'+hexA(c,.32)+','+hexA(c,.10)+' 72%)">'+
+        '<span class="lc-glyph" style="background:'+hexA(c,.82)+'">'+glyph+'</span>'+
+        '<span class="lc-kind">'+esc(note.type)+'</span>'+
+        (note.favorite?'<span class="lc-fav"><svg viewBox="0 0 24 24" stroke="currentColor" fill="currentColor" stroke-width="1" width="15" height="15"><path d="M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.2-4.1 5.8-.8L12 3.6"/></svg></span>':'')+
+        selbox+
+      '</span>'+
+      '<span class="lc-body">'+
+        '<span class="lc-title">'+esc(note.title||'未命名筆記')+'</span>'+
+        '<span class="lc-meta">'+esc(note.category||'未分類')+' · '+fmtRel(note.updatedAt)+'</span>'+
+        tags+
+      '</span>'+
+    '</button></div>';
 }
 function typeCounts(){
   const m={}; TYPE_ORDER.forEach(t=>m[t]=0);
@@ -1585,7 +1776,7 @@ function selectedCount(){ return Object.keys(state.selected||{}).length; }
 function toggleSel(id){
   if(state.selected[id]) delete state.selected[id]; else state.selected[id]=1;
   const on=!!state.selected[id];
-  const box=(state.selView==='library'?'#libRows':'#noteRows');
+  const box=(state.selView==='library'?'#libRows':(state.selView==='favorites'?'#favRows':'#noteRows'));
   const row=$('[data-open="'+id+'"]', $(box));
   if(row){
     row.classList.toggle('sel-on', on);
@@ -1599,13 +1790,47 @@ function syncSelUI(){
   $('#selCount').textContent = '已選 '+selectedCount()+' 筆';
   $$('[data-selall]').forEach(b=>{ b.textContent = (function(list){
     return list.every(n=>state.selected[n.id]) ? '取消全選' : '全選';
-  })(state.selView==='library'?libList():notesList()); });
+  })(state.selView==='library'?libList():(state.selView==='favorites'?favList():notesList())); });
   $('[data-seldel]', bar).style.opacity = selectedCount() ? '1' : '.55';
   const undo=$('#undoBar');
   if(state.lastDeleted){ undo.style.display='flex'; $('#undoText').textContent='已刪除 '+state.lastDeleted.notes.length+' 筆資料'; }
   else undo.style.display='none';
   document.body.classList.toggle('bar-on', !!(state.selMode || state.lastDeleted));
 }
+/* 筆記頁：空白處左右滑動切換類型（全部→筆記→日記→網頁→中藥→方劑→醫案→文獻）
+   列表列上的橫向手勢保留給滑動刪除，故起手在列/按鈕上時不做切換 */
+(function(){
+  const NOTE_SWIPE_TYPES=['全部','筆記','日記','網頁','中藥','方劑','醫案','文獻'];
+  let sx=0, sy=0, lx=0, ly=0, onCtrl=false, armed=false;
+  const vn=document.getElementById('v-notes');
+  if(!vn) return;
+  vn.addEventListener('touchstart', function(e){
+    if(!vn.classList.contains('on')) return;
+    const t=e.touches[0];
+    sx=lx=t.clientX; sy=ly=t.clientY; armed=true;
+    onCtrl=!!(e.target.closest && e.target.closest('.swipe, .row, .lcard, button, a, input, textarea, select, .chip'));
+  }, {passive:true});
+  vn.addEventListener('touchmove', function(e){
+    const t=e.touches[0]; if(t){ lx=t.clientX; ly=t.clientY; }
+  }, {passive:true});
+  vn.addEventListener('touchcancel', function(){ armed=false; }, {passive:true});
+  vn.addEventListener('touchend', function(e){
+    if(!armed) return; armed=false;
+    if(onCtrl) return;
+    const t=e.changedTouches && e.changedTouches[0];
+    const ex=t?t.clientX:lx, ey=t?t.clientY:ly;
+    const dx=ex-sx, dy=ey-sy;
+    if(Math.abs(dx)<55 || Math.abs(dy)>45) return;
+    let i=NOTE_SWIPE_TYPES.indexOf(state.notesFilter||'全部');
+    if(i<0) i=0;
+    i += (dx<0 ? 1 : -1);
+    if(i<0 || i>=NOTE_SWIPE_TYPES.length) return;
+    const nt=NOTE_SWIPE_TYPES[i];
+    flipList($('#noteRows'), function(){ state.notesFilter=nt; state.catFilter=null; renderNotes(); });
+    const on=document.querySelector('#notesChips .chip.on');
+    if(on && on.scrollIntoView) on.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
+  }, {passive:true});
+})();
 function renderNotes(){
   const types=['全部','筆記','日記','網頁','中藥','方劑','醫案','文獻'];
   $('#notesChips').innerHTML = (state.catFilter ? '<button class="chip on" data-clearcat="1">'+esc(state.catFilter)+' ✕</button>' : '') +
@@ -1692,6 +1917,36 @@ async function deleteCategory(name){
 /* =========================================================
    11. 資料庫
    ========================================================= */
+/* 精簡模式：單行列（色點 + 標題 + 星標 + 類型） */
+function compactHTML(note, sel){
+  const on=!!(sel && state.selected && state.selected[note.id]);
+  const c=typeColor(note.type);
+  const fv=note.favorite?' is-fav':'';
+  const selbox= sel
+    ? '<span class="selbox'+(on?' on':'')+'" style="position:static;margin-left:auto">'+svgIco('<path d="M9.6 12.6l2 2 3.4-4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>')+'</span>'
+    : '';
+  return '<div class="swipe lc-swipe" data-sid="'+note.id+'"><div class="swipe-act">刪除</div>'+
+    '<button class="lrow-compact'+fv+'" data-open="'+note.id+'">'+
+      '<span class="cdot" style="background:'+c+'"></span>'+
+      '<span class="ctitle">'+esc(note.title||'未命名筆記')+'</span>'+
+      '<span class="cfav"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2" width="13" height="13"><path d="M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.2-4.1 5.8-.8L12 3.6" stroke-linejoin="round"/></svg></span>'+
+      '<span class="cmeta">'+esc(note.type)+' · '+fmtRel(note.updatedAt)+'</span>'+
+      selbox+
+    '</button></div>';
+}
+/* 收藏清單 */
+function favList(){ return state.notes.filter(function(n){ return n.favorite && !n.deleted; }).sort(function(a,b){ return b.updatedAt-a.updatedAt; }); }
+/* 收藏頁：星標資料的卡片格 */
+function renderFavorites(){
+  const favs=favList();
+  const sel=selActive('favorites');
+  const btn=$('#btnSelFav');
+  if(btn){ btn.classList.toggle('on', !!sel); btn.setAttribute('aria-pressed', sel?'true':'false'); }
+  $('#favRows').innerHTML = favs.length
+    ? '<div class="lgrid" style="margin-top:12px">'+favs.map(function(n){ return cardHTML(n, sel); }).join('')+'</div>'
+    : '<div class="empty"><b>尚無收藏</b>打開筆記，點右上角的星星即可加入收藏</div>';
+  syncSelUI();
+}
 function renderLibrary(){
   const counts=typeCounts();
   const cards=[
@@ -1726,10 +1981,29 @@ function renderLibrary(){
   }).join('') || '<div class="empty">尚無分類</div>';
 
   const filtered = libList();
+  /* 三列摘要：類型 / 分類 / 標籤 各自顯示目前狀態 */
+  const st=$('#lfSumType');
+  if(st) st.innerHTML = (state.libFilter && state.libFilter!=='全部')
+    ? '<button class="lf-chip" data-lfclear="type">'+esc(state.libFilter)+'</button>'
+    : '<span class="lf-none">全部</span>';
+  const sc=$('#lfSumCat');
+  if(sc) sc.innerHTML = '<span class="lf-none">'+catList.length+' 個</span>';
+  const sg=$('#lfSumTag');
+  if(sg) sg.innerHTML = state.tagFilter
+    ? '<button class="lf-chip" data-lfclear="tag">#'+esc(state.tagFilter)+'</button>'
+    : '<span class="lf-none">'+allTags().length+' 個</span>';
+  /* 有篩選的段亮金色提示（與收藏金同色系） */
+  const bt=$('[data-lfsec="type"]'); if(bt) bt.classList.toggle('f-on', !!(state.libFilter && state.libFilter!=='全部'));
+  const bc=$('[data-lfsec="cat"]');  if(bc) bc.classList.toggle('f-on', false);
+  const bg=$('[data-lfsec="tag"]');  if(bg) bg.classList.toggle('f-on', !!state.tagFilter);
+  /* 顯示模式選中狀態 */
+  const mode=state.libMode||'card';
+  $$('#libMode .lm-opt').forEach(function(b){ b.classList.toggle('on', b.dataset.lmode===mode); });
   $('#tagWall').innerHTML = (function(){
     const ts=allTags();
-    if(!ts.length) return '<div class="empty" style="padding:14px 2px"><b>尚無標籤</b>在筆記裡按「＋ 標籤」加入，例如 #傷寒論</div>';
-    return ts.map(function(x){
+    const addChip='<button class="tchip" data-tagwalladd="1" style="border-style:dashed;background:var(--lav2);color:var(--lav-deep)">＋ 標籤</button>';
+    if(!ts.length) return addChip+'<span style="font-size:11.5px;color:var(--ink3);align-self:center">尚無標籤，點「＋ 標籤」可批次為資料加上標籤</span>';
+    return addChip+ts.map(function(x){
       return '<button class="tchip'+(state.tagFilter===x.t?' on':'')+'" data-tagfilter="'+esc(x.t)+'">#'+esc(x.t)+'<span>'+x.n+'</span></button>';
     }).join('');
   })();
@@ -1739,8 +2013,21 @@ function renderLibrary(){
   $('#btnSelLib').setAttribute('aria-pressed', sel?'true':'false');
   $('#libListTitle').textContent = (state.tagFilter ? '#'+state.tagFilter : (state.libFilter==='全部' ? '全部資料' : state.libFilter+'資料'));
   $('#libFilterHint').textContent = state.tagFilter ? (filtered.length+' 筆 · 點標籤取消') : (state.libFilter==='全部' ? '點上方卡片可篩選' : '再次點卡片取消篩選');
-  $('#libRows').innerHTML = filtered.map(n=>rowHTML(n, null, sel)).join('')
-    || '<div class="empty">此類型尚無資料</div>';
+  /* 依類型分組；顯示模式：卡片格（kittenjam 式）／清單列／精簡列 */
+  const lmode=state.libMode||'card';
+  const lgroups={};
+  filtered.forEach(function(n){ (lgroups[n.type]=lgroups[n.type]||[]).push(n); });
+  const secs=TYPE_ORDER.filter(function(t){ return lgroups[t]&&lgroups[t].length; }).map(function(t){
+    const head='<div class="lsec-head"><span class="dot" style="background:'+typeColor(t)+'"></span><b>'+esc(t)+'</b><span>'+lgroups[t].length+' 筆</span></div>';
+    if(lmode==='list'){
+      return head+'<div class="rows" style="margin-top:2px">'+lgroups[t].map(function(n){ return rowHTML(n, null, sel); }).join('')+'</div>';
+    }
+    if(lmode==='compact'){
+      return head+'<div class="rows" style="margin-top:2px">'+lgroups[t].map(function(n){ return compactHTML(n, sel); }).join('')+'</div>';
+    }
+    return head+'<div class="lgrid">'+lgroups[t].map(function(n){ return cardHTML(n, sel); }).join('')+'</div>';
+  }).join('');
+  $('#libRows').innerHTML = secs || '<div class="empty">此類型尚無資料</div>';
   syncSelUI();
 }
 
@@ -1790,6 +2077,115 @@ function graphLabel(t){
   if(m) return m[0].length>8 ? m[0].slice(0,8)+'…' : m[0];
   return q.length>5 ? q.slice(0,5)+'…' : q;
 }
+/* 開源引擎：force-graph 力導向網絡（拖曳 / 縮放 / 平移 / 關聯粒子流動） */
+var fgInstance=null;
+function gnoteMarkup(){
+  const n=state.notes.filter(function(x){ return x.id===state.gSel; })[0];
+  if(!n) return '<span class="gn-tip">點任一個小點，這裡會顯示它的標題，再按「開啟」進原文。可拖曳節點、滾輪縮放、拖曳空白處平移。</span>';
+  return '<div class="gn-main"><b>'+esc(n.title||'未命名')+'</b><span>'+esc(n.type)+' · '+esc(n.category||'未分類')+' · '+fmtRel(n.updatedAt)+'</span></div><button class="gn-open" data-gopen="'+n.id+'">開啟</button>';
+}
+function fgDrawNode(n, ctx, globalScale){
+  const r = n.kind==='center'?18 : n.kind==='cat'? (9+Math.min(5,n.count*0.9)) : (n.hasRel?5.6:4.6);
+  ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, 2*Math.PI);
+  if(n.kind==='note'){
+    ctx.fillStyle=hexA(n.color,.22); ctx.fill();
+    ctx.lineWidth=1.3; ctx.strokeStyle=hexA(n.color,.85); ctx.stroke();
+    if(state.gSel===n.id){
+      ctx.beginPath(); ctx.arc(n.x, n.y, r+3.2, 0, 2*Math.PI);
+      ctx.strokeStyle='#6755DE'; ctx.lineWidth=1.6; ctx.stroke();
+    }
+  } else if(n.kind==='cat'){
+    ctx.fillStyle='#F7EBC8'; ctx.fill();
+    ctx.lineWidth=1.4; ctx.strokeStyle='rgba(201,162,74,.72)'; ctx.stroke();
+  } else {
+    ctx.fillStyle='#DFEDE4'; ctx.fill();
+    ctx.lineWidth=1.8; ctx.strokeStyle='rgba(57,131,106,.68)'; ctx.stroke();
+  }
+  if(n.kind!=='note'){
+    const fs=Math.max(3, 10.5/globalScale);
+    const show=n.name.length>8? n.name.slice(0,8)+'…' : n.name;
+    ctx.font=(n.kind==='center'?'700 ':'600 ')+fs+'px system-ui,-apple-system,sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle= n.kind==='center'? '#2E6B52' : '#8A6D1C';
+    ctx.fillText(show, n.x, n.y-fs*0.34);
+    ctx.font=(fs*0.84)+'px system-ui,-apple-system,sans-serif';
+    ctx.fillStyle='rgba(122,113,152,.92)';
+    ctx.fillText(n.count+' 筆', n.x, n.y+fs*0.62);
+  }
+}
+function fgAreaPaint(n, color, ctx){
+  const r = n.kind==='center'?21 : n.kind==='cat'? (11+Math.min(5,n.count*0.9)) : 9;
+  ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, 2*Math.PI);
+  ctx.fillStyle=color; ctx.fill();
+}
+function renderForceGraph(box, notes){
+  const meta=researchMeta();
+  const H=Math.max(430, Math.min(560, Math.round(window.innerHeight*0.62)));
+  box.innerHTML='<div id="fgMount" style="height:'+H+'px"></div>'+
+    '<div class="gnote" id="gNote">'+gnoteMarkup()+'</div>'+
+    '<div class="hintline">力導向圖譜（開源引擎 force-graph）：拖曳節點可搬移 · 滾輪縮放 · 拖曳空白處平移 · 紫色虛線流動是已建立關聯 · 點小點看內容。</div>';
+  const mount=$('#fgMount');
+  const groups={};
+  notes.forEach(function(x){ const k=x.category||'未分類'; (groups[k]=groups[k]||[]).push(x); });
+  const ks=Object.keys(groups).sort(function(a,b){
+    if(a==='未分類') return 1; if(b==='未分類') return -1;
+    return groups[b].length-groups[a].length || a.localeCompare(b);
+  });
+  const nodes=[], links=[], byId={};
+  const center={id:'__c', name:String(meta.title||'知識平台'), kind:'center', count:notes.length};
+  center.x=(mount.clientWidth||360)/2; center.y=H/2; center.fx=center.x; center.fy=center.y;
+  nodes.push(center);
+  ks.forEach(function(k){
+    const items=groups[k];
+    const hub={id:'__cat__'+k, name:k, kind:'cat', count:items.length};
+    nodes.push(hub);
+    links.push({source:center.id, target:hub.id, color:'rgba(57,131,106,.30)', width:1.6});
+    items.forEach(function(o){
+      const n={id:o.id, kind:'note', fullTitle:o.title||'未命名', noteType:o.type,
+        color:typeColor(o.type), hasRel:!!(o.related&&o.related.length)};
+      nodes.push(n); byId[o.id]=n;
+      links.push({source:hub.id, target:o.id, color:'rgba(103,85,222,.20)', width:1});
+    });
+  });
+  const seen={};
+  notes.forEach(function(o){
+    (o.related||[]).forEach(function(rid){
+      if(!byId[rid] || o.id===rid) return;
+      const key=o.id<rid? o.id+'|'+rid : rid+'|'+o.id;
+      if(seen[key]) return; seen[key]=1;
+      links.push({source:o.id, target:rid, color:'rgba(80,60,200,.5)', width:1.3, rel:1});
+    });
+  });
+  if(fgInstance){ try{ fgInstance._destructor(); }catch(e){} fgInstance=null; }
+  const fg=ForceGraph()(mount)
+    .graphData({nodes:nodes, links:links})
+    .nodeId('id')
+    .nodeLabel(function(n){
+      return n.kind==='note' ? (n.fullTitle+' · '+n.noteType) : (n.name+(n.kind==='cat'?' · '+n.count+' 筆':''));
+    })
+    .nodeVal(function(n){ return n.kind==='center'?16:(n.kind==='cat'?7:(n.hasRel?3.6:2.4)); })
+    .nodeCanvasObject(fgDrawNode)
+    .nodePointerAreaPaint(fgAreaPaint)
+    .linkColor('color')
+    .linkWidth('width')
+    .linkLineDash(function(l){ return l.rel?[3,3]:null; })
+    .linkDirectionalParticles(function(l){ return l.rel?2:0; })
+    .linkDirectionalParticleWidth(1.8)
+    .linkDirectionalParticleSpeed(.005)
+    .onNodeClick(function(n){
+      if(n.kind==='note'){ state.gSel=n.id; const g=$('#gNote'); if(g) g.innerHTML=gnoteMarkup(); }
+      else if(n.kind==='cat'){ fg.centerAt(n.x, n.y, 500); fg.zoom(1.5, 500); }
+    })
+    .onNodeDragEnd(function(n){ if(n.kind==='center'){ n.fx=n.x; n.fy=n.y; } })
+    .width(mount.clientWidth||360)
+    .height(H)
+    .cooldownTime(1600);
+  const charge=fg.d3Force('charge'); if(charge) charge.strength(-120);
+  const lf=fg.d3Force('link'); if(lf) lf.distance(function(l){ return l.rel?38:52; });
+  fgInstance=fg;
+  window.__fg=fg; /* 供偵錯與測試使用 */
+  setTimeout(function(){ try{ fg.zoomToFit(700, 26); }catch(e){} }, 1700);
+}
 function renderGraph(){
   $$('.gtabs button').forEach(b=> b.classList.toggle('on', b.dataset.g===state.graphMode));
   const box=$('#graphBox');
@@ -1837,42 +2233,53 @@ function renderGraph(){
     return;
   }
 
-  // 網絡圖：分類為樞紐，資料為衛星點，關聯以虛線連接
-  const W=360, H=430, cx=180, cy=200;
+  /* 力導向版（開源 force-graph 引擎）：優先使用，引擎載入失敗時退回下方靜態 SVG */
+  if(window.ForceGraph){ renderForceGraph(box, notes); return; }
+
+  // 網絡圖（靜態 SVG 備援）：中心＝研究平台，內圈大圓＝分類，外圈小點＝資料；實線＝從屬，虛線＝關聯
+  const W=360, H=470, cx=180, cy=205;
+  const meta=researchMeta();
   const groups={};
   notes.forEach(function(x){ const k=x.category||'未分類'; (groups[k]=groups[k]||[]).push(x); });
   const ks=Object.keys(groups).sort(function(a,b){
     if(a==='未分類') return 1; if(b==='未分類') return -1;
     return groups[b].length-groups[a].length || a.localeCompare(b);
   });
-  const near=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ink3'))||0;
-  const total=ks.length, R=ks.length>6?106:94;
+  const total=ks.length, R=ks.length>6?128:110;
   const nodes=[], hubs=[];
   ks.forEach(function(k,ki){
     const items=groups[k].slice().sort(function(a,b){ return (b.updatedAt||0)-(a.updatedAt||0); });
     const a0=-Math.PI/2 + ki*2*Math.PI/total;
     const hx=cx+Math.cos(a0)*R, hy=cy+Math.sin(a0)*R;
-    const hub={k:k,count:items.length,x:hx,y:hy,a:a0,r:22+Math.min(6,items.length*1.4),items:[]};
+    const hub={k:k,count:items.length,x:hx,y:hy,a:a0,r:21+Math.min(7,items.length*1.3),items:[]};
     hubs.push(hub);
     items.forEach(function(o,i){
-      const spread=Math.min(Math.PI*0.78, 0.34*Math.max(1,items.length-1));
+      const spread=Math.min(Math.PI*0.8, 0.36*Math.max(1,items.length-1));
       const a=a0+(items.length>1?(-spread/2+i*spread/(items.length-1)):0);
-      const rr=42;
-      const n={n:o,x:hx+Math.cos(a)*rr,y:hy+Math.sin(a)*rr,rr:o.related&&o.related.length?8.6:7.2};
+      const rr=48;
+      const n={n:o,x:hx+Math.cos(a)*rr,y:hy+Math.sin(a)*rr,rr:(o.related&&o.related.length)?8.6:7.2};
       hub.items.push(n); nodes.push(n);
     });
   });
   let edges='',hubDots='',dots='',labels='';
   hubs.forEach(function(h){
-    edges+='<line x1="'+h.x.toFixed(1)+'" y1="'+h.y.toFixed(1)+'" x2="'+h.x.toFixed(1)+'" y2="'+h.y.toFixed(1)+'" stroke="none"/>';
+    edges+='<line x1="'+cx+'" y1="'+cy+'" x2="'+h.x.toFixed(1)+'" y2="'+h.y.toFixed(1)+'" stroke="rgba(57,131,106,.22)" stroke-width="1.5"/>';
     h.items.forEach(function(n){
-      edges+='<line x1="'+h.x.toFixed(1)+'" y1="'+h.y.toFixed(1)+'" x2="'+n.x.toFixed(1)+'" y2="'+n.y.toFixed(1)+'" stroke="rgba(103,85,222,.20)" stroke-width="1"/>';
+      edges+='<line x1="'+h.x.toFixed(1)+'" y1="'+h.y.toFixed(1)+'" x2="'+n.x.toFixed(1)+'" y2="'+n.y.toFixed(1)+'" stroke="rgba(103,85,222,.18)" stroke-width="1"/>';
     });
-    hubDots+='<circle cx="'+h.x.toFixed(1)+'" cy="'+h.y.toFixed(1)+'" r="'+h.r.toFixed(1)+'" fill="#F1EEFB" stroke="var(--lav2)" stroke-opacity=".55" stroke-width="1.2" filter="url(#soft)"/>';
-    const lab=h.k.length>3?h.k.slice(0,3):h.k;
-    labels+='<text x="'+h.x.toFixed(1)+'" y="'+(h.y-1).toFixed(1)+'" text-anchor="middle" font-size="8.6" font-weight="600" fill="#4B3FA0">'+esc(lab)+'</text>'+
-      '<text x="'+h.x.toFixed(1)+'" y="'+(h.y+8).toFixed(1)+'" text-anchor="middle" font-size="6.6" fill="#9A93B2">'+h.count+' 筆</text>';
+    hubDots+='<circle cx="'+h.x.toFixed(1)+'" cy="'+h.y.toFixed(1)+'" r="'+h.r.toFixed(1)+'" fill="#F7EBC8" stroke="#C9A24A" stroke-opacity=".65" stroke-width="1.3" filter="url(#soft)"/>';
+    /* 分類全名顯示，不再截斷；字級隨長度調整 */
+    const fs=h.k.length<=4?8.8:(h.k.length<=6?7.4:6.6);
+    labels+='<text x="'+h.x.toFixed(1)+'" y="'+(h.y+2.8).toFixed(1)+'" text-anchor="middle" font-size="'+fs+'" font-weight="600" fill="#8A6D1C">'+esc(h.k)+'</text>';
+    labels+='<text x="'+h.x.toFixed(1)+'" y="'+(h.y+h.r+11).toFixed(1)+'" text-anchor="middle" font-size="6.8" fill="#9A93B2">'+h.count+' 筆</text>';
   });
+  /* 中心節點：研究平台（研究線標題），綠色 */
+  const cTitle=String(meta.title||'知識平台');
+  const cR=31;
+  hubDots+='<circle cx="'+cx+'" cy="'+cy+'" r="'+cR+'" fill="#DFEDE4" stroke="#39836A" stroke-opacity=".6" stroke-width="1.8" filter="url(#soft)"/>';
+  const cShow=cTitle.length<=6?cTitle:cTitle.slice(0,6);
+  labels+='<text x="'+cx+'" y="'+(cy-1)+'" text-anchor="middle" font-size="9.2" font-weight="700" fill="#2E6B52">'+esc(cShow)+'</text>';
+  labels+='<text x="'+cx+'" y="'+(cy+9)+'" text-anchor="middle" font-size="6.8" fill="#5E8F7B">'+notes.length+' 筆資料</text>';
   nodes.forEach(function(o){
     const c=typeColor(o.n.type);
     dots+='<g class="g-node" data-gnode="'+o.n.id+'" style="cursor:pointer">'+
@@ -1887,11 +2294,11 @@ function renderGraph(){
   });
   const sel=nodes.find(function(z){ return state.gSel && z.n.id===state.gSel; });
   const selLabel=sel?'<circle cx="'+sel.x.toFixed(1)+'" cy="'+sel.y.toFixed(1)+'" r="'+(sel.rr+3.6)+'" fill="none" stroke="var(--lav)" stroke-width="1.6"/>':'';
-  box.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="以分類為中心的資料網絡圖">'+
+  box.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="以研究平台為中心的輻射式知識網絡圖">'+
     '<defs><filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#3A2A94" flood-opacity=".08"/></filter></defs>'+
     edges+hubDots+dots+labels+selLabel+
-    '<text x="'+(W/2)+'" y="'+(H-8)+'" text-anchor="middle" font-size="8.6" fill="#8D87A5">大圓＝分類 · 小點＝資料 · 顏色＝類型 · 虛線＝已建立關聯 · 點小點看內容</text></svg>'+
-    '<div class="gnote" id="gNote">'+(sel?
+    '<text x="'+(W/2)+'" y="'+(H-8)+'" text-anchor="middle" font-size="8.6" fill="#8D87A5">中心＝研究平台 · 大圓＝分類 · 小點＝資料 · 顏色＝類型 · 虛線＝已建立關聯 · 點小點看內容</text></svg>'+
+'<div class="gnote" id="gNote">'+(sel?
       '<div class="gn-main"><b>'+esc(sel.n.title||'未命名')+'</b><span>'+esc(sel.n.type)+' · '+esc(sel.n.category||'未分類')+' · '+fmtRel(sel.n.updatedAt)+'</span></div><button class="gn-open" data-gopen="'+sel.n.id+'">開啟</button>'
       :'<span class="gn-tip">點任一個小點，這裡會顯示它的標題，再按「開啟」進原文。</span>')+'</div>';
 }
@@ -1975,6 +2382,7 @@ function renderResearch(){
  ========================================================= */
 function renderSettings(){
   $('#setDbCount').textContent = state.notes.length+' 筆 · '+(backend==='idb'?'IndexedDB':'相容模式');
+  renderFontScaleOpts();
 }
 function exportJSON(){
   const payload={schema:'knowledge-space/v0.1', exportedAt:new Date().toISOString(), notes:state.notes, templates:state.templates, research:researchLines(), researchMeta:researchMeta()};
@@ -2020,9 +2428,27 @@ async function importJSON(file){
     toast('還原完成，共 '+all.length+' 筆');
   }catch(err){ toast('還原失敗：'+err.message); }
 }
+/* —— 字體大小調節：以 CSS zoom 縮放整個介面，localStorage 即時套用 —— */
+const FONT_SCALES=[{k:'小',z:0.9},{k:'標準',z:1},{k:'大',z:1.15},{k:'特大',z:1.3}];
+function renderFontScaleOpts(){
+  const z=parseFloat(String(window.__fsZoom||1));
+  const box=$('#fontScaleOpts'); if(!box) return;
+  box.innerHTML=FONT_SCALES.map(function(o){
+    return '<button class="fs-opt'+(Math.abs(o.z-z)<0.001?' on':'')+'" data-fscale="'+o.z+'">'+o.k+'</button>';
+  }).join('');
+}
+function applyFontScale(z, save){
+  z=Math.min(1.3, Math.max(0.9, parseFloat(z)||1));
+  window.__fsZoom=z;
+  document.documentElement.style.zoom=z;
+  try{ localStorage.setItem('ks_fontscale', String(z)); }catch(e){}
+  if(save) Store.metaSet('fontScale', z);
+  renderFontScaleOpts();
+  if(state.view==='graph'){ try{ renderGraph(); }catch(e){} }
+}
 async function resetAll(){
   if(!confirm('清除本機所有資料？此動作無法復原。')) return;
-  if(!confirm('再次確認：所有筆記、日記、收藏都會被刪除。')) return;
+  if(!confirm('再次確認：所有筆記、日記、收藏都會被刪除（研究線與模板不受影響）。')) return;
   await Store.clear();
   const seed=SEED(); await Store.bulk(seed);
   state.notes=await Store.all(); state.idxCache.clear();
@@ -2192,6 +2618,8 @@ function sanitizeHTML(src){
     .replace(/<iframe[\s\S]*?<\/iframe>/gi,'')
     .replace(/<object[\s\S]*?<\/object>/gi,'')
     .replace(/<\/(script|style|iframe|object)>/gi,'')
+    /* 未閉合的危險標籤開頭也要清掉：<iframe src=...>（無 </iframe>）會真的渲染出來 */
+    .replace(/<(script|style|iframe|object|embed|link|base|meta)\b[^>]*>/gi,'')
     .replace(/\son[a-z]+="[^"]*"/gi,'')
     .replace(/\son[a-z]+='[^']*'/gi,'')
     .replace(/\son[a-z]+=[^\s>]+/gi,'')
@@ -2235,7 +2663,7 @@ function renderEd(note){
   state.currentNote=note;
   const c=typeClass(note.type);
   $('#edTitle').textContent=note.title||'';
-  $('#edType').innerHTML='<span class="badge b-'+c+'">'+note.type+'</span>'+
+  $('#edType').innerHTML='<button type="button" data-edtype="1" class="badge b-'+c+'" style="cursor:pointer" aria-label="切換類型" title="點我可切換類型">'+esc(note.type)+' ▾</button>'+
     '<button class="cat-btn" data-edcat="1" aria-label="切換分類">'+esc(note.category||'未分類')+
       svgIco('<path d="M6 9.5l6 6 6-6" stroke-linecap="round" stroke-width="1.7"/>')+'</button>'+
     '<span class="ed-tags" id="edTags"></span>'+
@@ -2250,11 +2678,21 @@ function renderEd(note){
     '<p style="color:var(--ink3);font-size:12.5px">空白筆記，用下方工具列加入第一個區塊。</p>';
   $('#edTime').textContent='更新 '+fmtRel(note.updatedAt);
   $('#edWords').textContent=textOf(note).replace(/\s/g,'').length+' 字';
-  $('#btnFav').style.color = note.favorite ? 'var(--lav)' : '';
+  $('#btnFav').style.color = note.favorite ? '#C9A227' : '';
   $('#edSave').textContent='已儲存';
   $('#edSave').style.color='var(--jade)';
   renderSuggestions(note);
   renderRelated(note);
+  if(state.focusTitle){
+    state.focusTitle=false;
+    setTimeout(function(){
+      const el=$('#edTitle'); if(!el) return; el.focus();
+      try{
+        const rg=document.createRange(); rg.selectNodeContents(el);
+        const sg=window.getSelection(); sg.removeAllRanges(); sg.addRange(rg);
+      }catch(e){}
+    }, 90);
+  }
 }
 function renderSuggestions(note){
   const box=$('#relSug');
@@ -2317,6 +2755,59 @@ function removeTag(t){
   renderTags(note); renderSuggestions(note);
   if(state.saveTimer){ clearTimeout(state.saveTimer); state.saveTimer=null; }
   flushSave(); toast('已移除標籤 #'+t);
+}
+/* 編輯器：切換資料類型（中藥／方劑／醫案／文獻等） */
+function openTypeSheet(){
+  const note=state.currentNote; if(!note) return;
+  openSheet('切換類型',
+    '<div class="nn-chips">'+TYPE_ORDER.map(function(t){
+      return '<button class="chip'+(t===note.type?' on':'')+'" data-etchip="'+t+'">'+t+'</button>';
+    }).join('')+'</div>'+
+    '<div class="ovl-note">類型決定配色與篩選（含資料庫卡片與研究線計數），點一下即切換並儲存。分類與標籤不受影響。</div>',
+    null, null);
+}
+/* 資料庫：標籤牆批次新增標籤（可勾選目前列表中的資料一次套用） */
+function openWallTagSheet(){
+  const list=libList();
+  const existing=allTags().slice(0,10);
+  openSheet('新增標籤',
+    '<label class="nn-l">標籤名稱</label>'+
+    '<input id="wallTagName" placeholder="例：傷寒論、臨床劑量" style="width:100%;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff" autocomplete="off">'+
+    (existing.length?'<div class="nn-chips" style="margin-top:8px">'+existing.map(function(x){ return '<button class="chip" data-walltagpick="'+esc(x.t)+'">#'+esc(x.t)+'</button>'; }).join('')+'</div>':'')+
+    '<label class="nn-l">套用到哪些資料（目前列表 '+list.length+' 筆，可勾選）</label>'+
+    '<div style="max-height:230px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:2px 4px;background:#fff">'+
+    (list.length?list.map(function(n){
+      return '<label style="display:flex;align-items:center;gap:9px;padding:8px 8px;border-bottom:1px solid var(--line);font-size:13px;cursor:pointer">'+
+        '<input type="checkbox" data-wallnote="'+n.id+'">'+
+        '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(n.title||'未命名筆記')+
+        '<i style="font-style:normal;color:var(--ink4);font-size:11px;margin-left:6px">'+esc(n.type)+'</i></span></label>';
+    }).join(''):'<div style="padding:12px;color:var(--ink3);font-size:12.5px">目前篩選條件下沒有資料</div>')+
+    '</div>'+
+    '<div class="ovl-note">標籤會加到勾選的每一筆資料上，標籤牆與搜尋即時更新；同筆資料不會重複加入。</div>',
+    '加入', async function(){
+      const el=$('#wallTagName');
+      const v=(el?el.value:'').trim().replace(/^#+/,'');
+      if(!v){ toast('請先輸入標籤名稱'); return false; }
+      const boxes=$$('#ovlBody [data-wallnote]');
+      const checked=boxes.filter(function(c){ return c.checked; }).map(function(c){ return c.dataset.wallnote; });
+      if(!checked.length){ toast('請至少勾選一筆資料'); return false; }
+      const targets=checked.map(function(id){ return state.notes.find(function(n){ return n.id===id; }); }).filter(Boolean);
+      let added=0;
+      targets.forEach(function(n){
+        n.tags=n.tags||[];
+        if(n.tags.indexOf(v)<0){ n.tags.push(v); added++; }
+        n.updatedAt=Date.now();
+      });
+      if(added){
+        await Store.bulk(JSON.parse(JSON.stringify(targets)));
+        state.idxCache.clear();
+        renderLibrary();
+        toast('已將 #'+v+' 加到 '+added+' 筆資料');
+      } else {
+        toast('勾選的資料都已有這個標籤');
+      }
+    });
+  setTimeout(function(){ const el=$('#wallTagName'); if(el) el.focus(); }, 60);
 }
 /* 篩選重排（原生 FLIP），用於資料庫與筆記列表 */
 function flipList(box, doRender){
@@ -2521,6 +3012,7 @@ function openNewNoteSheet(){
       };
       state.notes.push(note);
       Store.put(note);
+      if(title==='未命名筆記') state.focusTitle=true; /* 進編輯器後全選預設標題，輸入即覆蓋 */
       openNote(note.id);
       toast('已建立「'+title+'」· '+nnSel.type+'/'+nnSel.category);
     });
@@ -2533,16 +3025,56 @@ function openNewNoteSheet(){
 document.addEventListener('click', function(e){
   const st=e.target.closest('[data-stype]');
   if(st){ state.searchType=st.dataset.stype; renderSearch(); return; }
+  const fs=e.target.closest('[data-fscale]');
+  if(fs){ applyFontScale(fs.dataset.fscale, true); return; }
   const nf=e.target.closest('[data-nfilter]');
   if(nf){ const t=nf.dataset.nfilter; flipList($('#noteRows'), function(){ state.notesFilter=t; state.catFilter=null; renderNotes(); }); return; }
   const cc=e.target.closest('[data-clearcat]');
   if(cc){ flipList($('#noteRows'), function(){ state.catFilter=null; renderNotes(); }); return; }
+  /* 注意順序：清除 chip 在收合列按鈕內，必須先於折疊列判斷 */
+  const lfc=e.target.closest('[data-lfclear]');
+  if(lfc){
+    const k=lfc.dataset.lfclear;
+    flipList($('#libRows'), function(){
+      if(k==='type') state.libFilter='全部'; else state.tagFilter=null;
+      renderLibrary();
+    });
+    return;
+  }
+  const lft=e.target.closest('[data-lfsec]');
+  if(lft){
+    const k=lft.dataset.lfsec;
+    const pn=document.querySelector('[data-lfpanel="'+k+'"]');
+    if(!pn) return;
+    const opening=pn.hasAttribute('hidden');
+    if(opening) pn.removeAttribute('hidden'); else pn.setAttribute('hidden','');
+    lft.setAttribute('aria-expanded', opening?'true':'false');
+    /* 三區塊互斥展開：開一個收其他 */
+    if(opening){
+      $$('[data-lfpanel]').forEach(function(o){ if(o!==pn) o.setAttribute('hidden',''); });
+      $$('[data-lfsec]').forEach(function(b){ if(b!==lft) b.setAttribute('aria-expanded','false'); });
+    }
+    return;
+  }
+  const lm=e.target.closest('[data-lmode]');
+  if(lm){
+    state.libMode=lm.dataset.lmode;
+    try{ localStorage.setItem('ks_libmode', state.libMode); }catch(e2){}
+    flipList($('#libRows'), function(){ renderLibrary(); });
+    return;
+  }
   const lb=e.target.closest('[data-libtype]');
   if(lb){ const t=lb.dataset.libtype; const rows=$('#libRows');
-    const apply=function(){ state.libFilter = state.libFilter===t ? '全部' : t; renderLibrary(); };
-    const y=rows.getBoundingClientRect().top;
-    if(y>window.innerHeight*0.5){ rows.scrollIntoView({block:'center'}); setTimeout(function(){ flipList(rows, apply); }, 70); }
-    else flipList(rows, apply);
+    /* r11：選完自動收合類型面板，清單就在膠囊列正下方，不需捲動 */
+    const apply=function(){
+      state.libFilter = state.libFilter===t ? '全部' : t;
+      renderLibrary();
+      const pn=document.querySelector('[data-lfpanel="type"]');
+      if(pn && !pn.hasAttribute('hidden')) pn.setAttribute('hidden','');
+      const sb=document.querySelector('[data-lfsec="type"]');
+      if(sb) sb.setAttribute('aria-expanded','false');
+    };
+    flipList(rows, apply);
     return; }
   const tagadd=e.target.closest('[data-tagadd]');
   if(tagadd){ openTagSheet(); return; }
@@ -2564,6 +3096,21 @@ document.addEventListener('click', function(e){
   if(cat){ state.catFilter=cat.dataset.cat; state.notesFilter='全部'; go('notes'); return; }
   const edcat=e.target.closest('[data-edcat]');
   if(edcat){ openCatSheet(); return; }
+  const edtype=e.target.closest('[data-edtype]');
+  if(edtype){ openTypeSheet(); return; }
+  const etc=e.target.closest('[data-etchip]');
+  if(etc){
+    const note=state.currentNote; if(!note) return;
+    note.type=etc.dataset.etchip; note.updatedAt=Date.now();
+    if(state.saveTimer){ clearTimeout(state.saveTimer); state.saveTimer=null; }
+    flushSave(); renderEd(note); closeSheet();
+    toast('類型已切換為「'+note.type+'」');
+    return;
+  }
+  const twa=e.target.closest('[data-tagwalladd]');
+  if(twa){ openWallTagSheet(); return; }
+  const wtp=e.target.closest('[data-walltagpick]');
+  if(wtp){ const el=$('#wallTagName'); if(el) el.value=wtp.dataset.walltagpick; return; }
   const pick=e.target.closest('[data-pickcat]');
   if(pick){ e.stopPropagation(); applyCategory(pick.dataset.pickcat); closeSheet(); toast('已切換到「'+pick.dataset.pickcat+'」'); return; }
   const nc=e.target.closest('[data-newcat]');
@@ -2624,7 +3171,7 @@ document.addEventListener('click', function(e){
   const del=e.target.closest('[data-del]');
   if(del){ e.stopPropagation(); harvest(); const i=+del.dataset.del; state.currentNote.blocks.splice(i,1); state.htmlEdit=null; renderEd(state.currentNote); flushSave(); return; }
   const addrow=e.target.closest('[data-addrow]');
-  if(addrow){ harvest(); const i=+addrow.dataset.addrow; const b=state.currentNote.blocks[i]; const cols=(b.rows&&b.rows[0]?b.rows[0].length:3); b.rows.push(new Array(cols).fill('')); renderEd(state.currentNote); flushSave(); return; }
+  if(addrow){ harvest(); const i=+addrow.dataset.addrow; const b=state.currentNote.blocks[i]; const cols=(b.rows&&b.rows[0]?b.rows[0].length:3); b.rows.push(new Array(cols).fill('')); renderEd(state.currentNote); flushSave(); setTimeout(function(){ const last=document.querySelectorAll('#edBody tbody tr'); if(last.length) last[last.length-1].scrollIntoView({behavior:'smooth',block:'center'}); },30); return; }
   const relpick=e.target.closest('[data-relpick]');
   if(relpick){ openRelPicker(); return; }
   const relto=e.target.closest('[data-relto]');
@@ -2657,7 +3204,7 @@ document.addEventListener('click', function(e){
 let swp=null;
 document.addEventListener('pointerdown', function(e){
   if(state.selMode) return;
-  const btn=e.target.closest('.swipe .row');
+  const btn=e.target.closest('.swipe .row, .swipe .lcard, .swipe .lrow-compact');
   if(!btn) return;
   swp={btn:btn, wrap:btn.closest('.swipe'), x:e.clientX, y:e.clientY, dx:0, w:btn.offsetWidth, active:false, id:btn.dataset.open};
 });
@@ -2729,6 +3276,12 @@ $('#btnSelLib').addEventListener('click', function(){
   else { state.selMode=true; state.selView='library'; state.selected={}; }
   renderLibrary();
 });
+$('#btnSelFav').addEventListener('click', function(){
+  if(state.selMode && state.selView==='favorites'){ state.selMode=false; state.selView=null; state.selected={}; }
+  else { state.selMode=true; state.selView='favorites'; state.selected={}; }
+  renderFavorites();
+});
+$('#btnFavLib').addEventListener('click', function(){ go('favorites'); });
 $('#btnDelNote').addEventListener('click', function(){
   const n=state.currentNote; if(!n){ toast('沒有開啟的資料'); return; }
   const id=n.id;
@@ -2744,8 +3297,9 @@ $('#btnDelNote').addEventListener('click', function(){
 $('#btnFav').addEventListener('click', function(){
   const n=state.currentNote; if(!n) return;
   n.favorite=!n.favorite; scheduleSave();
-  $('#btnFav').style.color = n.favorite ? 'var(--lav)' : '';
+  $('#btnFav').style.color = n.favorite ? '#C9A227' : '';
   toast(n.favorite ? '已加入收藏' : '已取消收藏');
+  if(state.view==='favorites') renderFavorites();
 });
 $('#edBack').addEventListener('click', function(){
   const back=(state.returnView && state.returnView!=='note') ? state.returnView : 'notes';
@@ -2781,7 +3335,10 @@ $('#ovlCancel').addEventListener('click', closeSheet);
 $('#ovl').addEventListener('click', function(e){ if(e.target===$('#ovl')) closeSheet(); });
 $('#ovlOk').addEventListener('click', function(){
   if(!ovlOkHandler) { closeSheet(); return; }
-  if(ovlOkHandler()===false) return;
+  const r=ovlOkHandler();
+  if(r===false) return;
+  /* async 處理器：等 Promise 完成，回傳 false 才保留浮層（驗證失敗不關） */
+  if(r && typeof r.then==='function'){ r.then(function(v){ if(v!==false) closeSheet(); }).catch(function(){ closeSheet(); }); return; }
   closeSheet();
 });
 document.addEventListener('keydown', function(e){
@@ -2847,6 +3404,10 @@ function applyRail(collapsed){
    17. 啟動
  ========================================================= */
 (async function boot(){
+  /* 資料庫顯示模式（卡片/清單/精簡） */
+  (function(){ let m=null; try{ m=localStorage.getItem('ks_libmode'); }catch(e){} state.libMode=(['card','list','compact'].indexOf(m)>=0)?m:'card'; })();
+  /* 啟動即套用字體大小（localStorage 同步讀取，避免閃動） */
+  (function(){ const z=parseFloat(String(localStorage.getItem('ks_fontscale')||'1')); window.__fsZoom=(z&&z>0)?z:1; if(window.__fsZoom!==1) document.documentElement.style.zoom=window.__fsZoom; })();
   await Store.init();
   let all=await Store.all();
   if(!all || !all.length){
