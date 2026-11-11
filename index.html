@@ -544,8 +544,15 @@ body.bar-on .shell{padding-bottom:184px}
 .rel-chip .rx{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;color:var(--ink3);font-size:14px;line-height:1;background:var(--mist);border:0}
 .rel-empty{font-size:11.5px;color:var(--ink3);line-height:1.6}
 
-/* 圖譜節點資訊條 */
-.gnote{display:flex;align-items:center;gap:10px;margin:10px 14px 2px;padding:10px 12px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 4px 14px rgba(60,40,140,.05)}
+/* 標籤編輯 */
+.ed-tags{display:inline-flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tag-chip{display:inline-flex;align-items:center;gap:4px;background:var(--mist);color:var(--lav-deep);border-radius:7px;padding:3px 5px 3px 8px;font-size:10.5px;font-weight:600;max-width:150px}
+.tag-chip span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tag-chip button{width:16px;height:16px;border:0;background:none;color:var(--ink3);font-size:12px;line-height:1;display:grid;place-items:center;padding:0}
+.tag-add{font-size:10.5px;font-weight:600;color:var(--lav-deep);background:#fff;border:1px dashed var(--line);border-radius:7px;padding:4px 8px;min-height:24px}
+.tag-add:hover{background:var(--mist)}
+
+/* 圖譜節點資訊條 */.gnote{display:flex;align-items:center;gap:10px;margin:10px 14px 2px;padding:10px 12px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 4px 14px rgba(60,40,140,.05)}
 .gnote .gn-main{flex:1;min-width:0}
 .gnote .gn-main b{display:block;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gnote .gn-main span{display:block;font-size:10.5px;color:var(--ink3);margin-top:2px}
@@ -2196,8 +2203,10 @@ function renderEd(note){
   $('#edType').innerHTML='<span class="badge b-'+c+'">'+note.type+'</span>'+
     '<button class="cat-btn" data-edcat="1" aria-label="切換分類">'+esc(note.category||'未分類')+
       svgIco('<path d="M6 9.5l6 6 6-6" stroke-linecap="round" stroke-width="1.7"/>')+'</button>'+
-    (note.tags&&note.tags.length?'<span style="color:var(--ink3)">#'+note.tags.map(esc).join(' #')+'</span>':'')+
+    '<span class="ed-tags" id="edTags"></span>'+
+    '<button class="tag-add" data-tagadd="1" aria-label="新增標籤">＋ 標籤</button>'+
     (note.related&&note.related.length?'<span class="badge b-lav" style="margin-left:auto">已建 '+note.related.length+' 條關聯</span>':'');
+  renderTags(note);
   const backView=(state.returnView && state.returnView!=='note') ? state.returnView : 'notes';
   const backLabel={graph:'知識圖譜',library:'資料庫',notes:'筆記',home:'首頁',research:'研究中心',settings:'設定',search:'搜尋'}[backView]||'筆記';
   $('#edCrumb').innerHTML='<span data-origin-back="'+backView+'" style="color:var(--lav-deep);font-weight:600;cursor:pointer">‹ 回'+esc(backLabel)+'</span> · '+esc(note.type)+' · '+esc(note.category||'未分類');
@@ -2239,8 +2248,88 @@ function renderSuggestions(note){
       '<button class="mini ghost" data-relskip="1">忽略</button></div>';
   }).join('');
 }
-function relatedNotes(note){
-  return ((note&&note.related)||[]).map(function(id){
+function renderTags(note){
+  const box=$('#edTags'); if(!box) return;
+  const tags=(note&&note.tags)||[];
+  box.innerHTML=tags.map(function(t){
+    return '<span class="tag-chip"><span>#'+esc(t)+'</span><button data-tagdel="'+esc(t)+'" aria-label="移除標籤">×</button></span>';
+  }).join('');
+}
+function openTagSheet(){
+  const note=state.currentNote; if(!note) return;
+  openSheet('新增標籤',
+    '<input id="tagInput" placeholder="例：傷寒論、桂枝湯、臨床劑量" style="width:100%;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff" autocomplete="off">'+
+    '<div class="ovl-note">標籤可有可無、可多個，用於搜尋與關聯推薦，不影響分類。輸入後按「新增」。</div>',
+    '新增', function(){
+      const el=$('#tagInput');
+      const v=(el?el.value:'').trim().replace(/^#+/,'');
+      if(!v) return;
+      note.tags=note.tags||[];
+      if(note.tags.indexOf(v)<0) note.tags.push(v);
+      renderTags(note); renderSuggestions(note);
+      if(state.saveTimer){ clearTimeout(state.saveTimer); state.saveTimer=null; }
+      flushSave(); toast('已加入標籤 #'+v);
+    });
+  setTimeout(function(){ const el=$('#tagInput'); if(el) el.focus(); }, 60);
+}
+function removeTag(t){
+  const note=state.currentNote; if(!note) return;
+  note.tags=(note.tags||[]).filter(function(x){ return x!==t; });
+  renderTags(note); renderSuggestions(note);
+  if(state.saveTimer){ clearTimeout(state.saveTimer); state.saveTimer=null; }
+  flushSave(); toast('已移除標籤 #'+t);
+}
+/* 篩選重排（原生 FLIP），用於資料庫與筆記列表 */
+function flipList(box, doRender){
+  if(!box){ doRender(); return; }
+  const prev=new Map();
+  box.querySelectorAll('.swipe').forEach(function(el){
+    prev.set(el.dataset.sid, {top:el.getBoundingClientRect().top, clone:el.cloneNode(true)});
+  });
+  const boxTop=box.getBoundingClientRect().top;
+  doRender();
+  const nowIds=new Set();
+  box.querySelectorAll('.swipe').forEach(function(el){
+    const id=el.dataset.sid; nowIds.add(id);
+    const p=prev.get(id);
+    if(p){
+      const d=p.top-el.getBoundingClientRect().top;
+      if(Math.abs(d)>1){
+        el.style.transition='none';
+        el.style.transform='translateY('+d.toFixed(1)+'px)';
+        requestAnimationFrame(function(){
+          el.style.transition='transform .46s cubic-bezier(.2,0,.2,1)';
+          el.style.transform='translateY(0)';
+        });
+      }
+    } else {
+      el.style.opacity='0';
+      el.style.transform='scale(.94)';
+      requestAnimationFrame(function(){
+        el.style.transition='opacity .3s ease, transform .36s cubic-bezier(.2,0,.2,1)';
+        el.style.opacity='1';
+        el.style.transform='scale(1)';
+      });
+    }
+  });
+  // 被篩掉的那幾列：原位置縮小淡出後移除
+  if(box.style.position!=='relative') box.style.position='relative';
+  prev.forEach(function(p,id){
+    if(nowIds.has(id)) return;
+    const g=p.clone;
+    g.classList.add('flip-ghost');
+    g.style.position='absolute';
+    g.style.left='0'; g.style.right='0';
+    g.style.top=(p.top-boxTop).toFixed(1)+'px';
+    g.style.zIndex='4'; g.style.pointerEvents='none';
+    g.style.transformOrigin='center';
+    g.style.transition='opacity .26s ease, transform .3s cubic-bezier(.2,0,.2,1)';
+    box.appendChild(g);
+    requestAnimationFrame(function(){ g.style.opacity='0'; g.style.transform='scale(.92)'; });
+    setTimeout(function(){ g.remove(); }, 330);
+  });
+}
+function relatedNotes(note){  return ((note&&note.related)||[]).map(function(id){
     return state.notes.find(function(n){ return n.id===id; });
   }).filter(Boolean);
 }
@@ -2369,11 +2458,15 @@ document.addEventListener('click', function(e){
   const st=e.target.closest('[data-stype]');
   if(st){ state.searchType=st.dataset.stype; renderSearch(); return; }
   const nf=e.target.closest('[data-nfilter]');
-  if(nf){ state.notesFilter=nf.dataset.nfilter; state.catFilter=null; renderNotes(); return; }
+  if(nf){ const t=nf.dataset.nfilter; flipList($('#noteRows'), function(){ state.notesFilter=t; state.catFilter=null; renderNotes(); }); return; }
   const cc=e.target.closest('[data-clearcat]');
-  if(cc){ state.catFilter=null; renderNotes(); return; }
+  if(cc){ flipList($('#noteRows'), function(){ state.catFilter=null; renderNotes(); }); return; }
   const lb=e.target.closest('[data-libtype]');
-  if(lb){ state.libFilter = state.libFilter===lb.dataset.libtype ? '全部' : lb.dataset.libtype; renderLibrary(); return; }
+  if(lb){ const t=lb.dataset.libtype; flipList($('#libRows'), function(){ state.libFilter = state.libFilter===t ? '全部' : t; renderLibrary(); }); return; }
+  const tagadd=e.target.closest('[data-tagadd]');
+  if(tagadd){ openTagSheet(); return; }
+  const tagdel=e.target.closest('[data-tagdel]');
+  if(tagdel){ removeTag(tagdel.dataset.tagdel); return; }
   const cat=e.target.closest('[data-cat]');
   if(cat){ state.catFilter=cat.dataset.cat; state.notesFilter='全部'; go('notes'); return; }
   const edcat=e.target.closest('[data-edcat]');
@@ -2600,6 +2693,7 @@ $('#ovlOk').addEventListener('click', function(){
 });
 document.addEventListener('keydown', function(e){
   if(e.key==='Escape' && $('#ovl').classList.contains('on')) closeSheet();
+  if(e.key==='Enter' && e.target && e.target.id==='tagInput'){ e.preventDefault(); $('#ovlOk').click(); }
 });
 $('#rowExport').addEventListener('click', exportJSON);
 $('#rowExport').addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); exportJSON(); } });
