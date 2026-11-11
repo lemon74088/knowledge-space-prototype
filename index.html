@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
@@ -511,7 +511,9 @@ body.bar-on .shell{padding-bottom:184px}
 /* 浮層：分類 / 模板 / 命名 */
 .ovl{position:fixed;inset:0;z-index:60;background:rgba(26,23,48,.34);backdrop-filter:blur(3px);display:none;align-items:flex-end;justify-content:center;padding:0}
 .ovl.on{display:flex}
-.ovl-card{width:100%;max-width:420px;background:#fff;border-radius:18px 18px 0 0;padding:16px 16px 20px;box-shadow:0 -12px 40px -20px rgba(40,30,110,.5);animation:ovlUp .22s cubic-bezier(.2,.7,.3,1)}
+.ovl-card{width:100%;max-width:420px;background:#fff;border-radius:18px 18px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom));box-shadow:0 -12px 40px -20px rgba(40,30,110,.5);animation:ovlUp .22s cubic-bezier(.2,.7,.3,1);max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.ovl.ovl-center{align-items:center;padding:18px}
+.ovl.ovl-center .ovl-card{border-radius:16px;max-width:360px;max-height:80vh;box-shadow:0 24px 60px -24px rgba(40,30,110,.55)}
 @media(min-width:760px){
   .ovl{align-items:center}
   .ovl-card{border-radius:16px;padding:18px 18px 16px}
@@ -741,7 +743,7 @@ body.bar-on .shell{padding-bottom:184px}
           <stop stop-color="#8E7DF2"/><stop offset="1" stop-color="#5A47D6"/>
         </linearGradient></defs>
       </svg>
-      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1 · r11</span></div>
+      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1 · r12</span></div>
       <button class="rail-toggle" id="railToggle" aria-label="收合側欄" title="收合側欄">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 6.5L9 12l5.5 5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
@@ -1030,7 +1032,7 @@ body.bar-on .shell{padding-bottom:184px}
 
         <div class="sgroup">
           <h3>關於</h3>
-          <div class="srow"><div class="s-main"><b>Knowledge Space · 原型 V0.1 · r11</b><span>單檔 HTML + IndexedDB，原生 JS</span></div><span class="s-val">2026-11-12</span></div>
+          <div class="srow"><div class="s-main"><b>Knowledge Space · 原型 V0.1 · r12</b><span>單檔 HTML + IndexedDB，原生 JS</span></div><span class="s-val">2026-11-12</span></div>
           <div class="srow"><div class="s-main"><b>正式版技術棧</b><span>React · TypeScript · Vite · Dexie · Orama · XYFlow · OpenCC</span></div><span class="s-val" style="color:var(--ink4)">規劃中</span></div>
         </div>
         <div class="hintline">提醒：iPhone Safari 若長期未開啟，可能回收網站資料。備份是唯一保險，請定期匯出。</div>
@@ -2472,9 +2474,11 @@ function openSheet(title, body, okLabel, onOk){
 function openSheetDanger(title, body, okLabel, onOk){
   openSheet(title, body, okLabel, onOk);
   $('#ovlOk').classList.add('danger');
+  $('#ovl').classList.add('ovl-center');
 }
 function closeSheet(){
   $('#ovl').classList.remove('on');
+  $('#ovl').classList.remove('ovl-center');
   ovlOkHandler=null;
 }
 function defaultTemplates(){
