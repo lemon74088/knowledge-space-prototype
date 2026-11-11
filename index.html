@@ -463,13 +463,24 @@ body.bar-on .shell{padding-bottom:184px}
 .ed-title:empty:before{content:"未命名筆記";color:var(--ink4)}
 .ed-sub{display:flex;align-items:center;gap:9px;padding:8px 18px 0;font-size:11px;color:var(--ink3)}
 .ed-body{padding:10px 18px 22px}
-.blk{margin:9px 0;border-radius:9px;outline:0;transition:box-shadow .18s;padding:3px 8px;margin-left:-8px;margin-right:-8px}
+.blk{margin:7px 0;border-radius:9px;outline:0;transition:box-shadow .18s;padding:3px 8px;margin-left:-8px;margin-right:-8px}
 .blk:hover{box-shadow:inset 0 0 0 1px var(--line2)}
 .blk:focus{background:#FCFBFF;box-shadow:inset 0 0 0 1px rgba(103,85,222,.3)}
-.blk-h2{font-size:16.5px;font-weight:600;letter-spacing:.02em;line-height:1.5}
-.blk-h1{font-size:20px;font-weight:650;letter-spacing:.01em;line-height:1.45;margin:12px 0}
-.blk-h3{font-size:14.5px;font-weight:600;color:var(--ink2);letter-spacing:.02em;line-height:1.55}
-.blk-p{font-size:14.5px;line-height:1.85;letter-spacing:.015em}
+/* 標題層級：字級 / 字重 / 行高 / 段距 四項拉開差距 */
+.blk-h1{
+  font-size:21px;font-weight:700;letter-spacing:.005em;line-height:1.38;color:var(--ink);
+  margin:20px 0 2px;padding-bottom:9px
+}
+.blk-h1:not(:focus){border-bottom:1px solid rgba(103,85,222,.16)}
+.blk-h2{
+  font-size:17px;font-weight:650;letter-spacing:.012em;line-height:1.45;color:var(--ink);
+  margin:16px 0 1px;padding-left:11px;border-left:3px solid rgba(103,85,222,.4)
+}
+.blk-h3{
+  font-size:14.8px;font-weight:600;color:var(--ink2);letter-spacing:.02em;line-height:1.6;
+  margin:12px 0 0
+}
+.blk-p{font-size:14.5px;line-height:1.9;letter-spacing:.015em}
 .blk-quote{
   font-family:var(--font-serif);font-size:14.5px;line-height:1.9;color:#332B4A;
   border-left:2px solid rgba(103,85,222,.3);padding-left:14px;margin-left:-2px
@@ -508,7 +519,11 @@ body.blkdrag #edBody{touch-action:none}
 /* 行動端：輸入類元素一律 ≥16px，避免 iOS Safari 聚焦時自動放大畫面 */
 @media(max-width:979.9px){
   input,textarea,select{font-size:16px !important}
-  .blk-p,.blk-quote,.blk-html,[contenteditable]{font-size:16px}
+  .blk-p,.blk-quote,.blk-html{font-size:15.5px}
+  /* 標題不比正文大就沒有階層，行動端仍要拉開 */
+  .blk-h1{font-size:21px;line-height:1.36}
+  .blk-h2{font-size:18px;line-height:1.45}
+  .blk-h3{font-size:16.5px;line-height:1.55}
 }
 .blk-html p{margin:0 0 9px}
 .blk-html h1,.blk-html h2,.blk-html h3,.blk-html h4{margin:14px 0 8px;font-size:15px;font-weight:600;letter-spacing:-.01em}
@@ -765,7 +780,7 @@ body.blkdrag #edBody{touch-action:none}
           <stop stop-color="#8E7DF2"/><stop offset="1" stop-color="#5A47D6"/>
         </linearGradient></defs>
       </svg>
-      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1 · r14</span></div>
+      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1 · r15</span></div>
       <button class="rail-toggle" id="railToggle" aria-label="收合側欄" title="收合側欄">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 6.5L9 12l5.5 5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
@@ -1612,22 +1627,97 @@ document.addEventListener('click', function(e){
 /* Markdown 標題：行首 # / ## / ### 直接升成 H1-H3 */
 (function(){
   const bodyEl=$('#edBody'); if(!bodyEl) return;
+  function innerLines(el){
+    let txt=el.innerText;
+    if(txt==null || txt==='') txt=el.textContent||'';
+    txt=txt.replace(/\u00a0/g,' ');
+    const arr=txt.split(/\n/);
+    while(arr.length && !arr[arr.length-1].trim()) arr.pop();
+    return arr;
+  }
+  /* 一個區塊內含多行：#/##/### 開頭的行各自切成獨立標題區塊 */
+  function splitMd(text, baseType, baseShadow){
+    const lines=String(text).split(/\n/);
+    const out=[]; let buf=[];
+    function flushBuf(trimTail){
+      let s=buf.join('\n');
+      if(trimTail) s=s.replace(/^\s+/,'');
+      if(s.trim()) out.push({t:baseType,text:s,html:null,shadow:!!baseShadow});
+      buf=[];
+    }
+    for(let j=0;j<lines.length;j++){
+      const mm=lines[j].match(/^(#{1,3})[ \t]+/);
+      if(mm){
+        flushBuf(false);
+        out.push({t:'h'+mm[1].length,text:lines[j].slice(mm[0].length),html:null,shadow:false});
+      } else buf.push(lines[j]);
+    }
+    flushBuf(true);
+    return out;
+  }
   bodyEl.addEventListener('input', function(e){
     const el=e.target.closest ? e.target.closest('[contenteditable][data-bt]') : null;
     if(!el) return;
     const bt=el.dataset.bt;
     if(bt==='table'||bt==='html') return;
-    const m=(el.textContent||'').match(/^(#{1,3})\s+/);
-    if(!m) return;
+    const lines=innerLines(el);
+    if(!lines.length) return;
+    if(!lines.some(function(l){ return /^(#{1,3})[ \t]+/.test(l); })) return;
     const i=+el.dataset.bi;
     const note=state.currentNote; if(!note || !note.blocks[i]) return;
-    const b=note.blocks[i];
-    b.t='h'+m[1].length;
-    b.text=(el.textContent||'').slice(m[0].length);
-    b.html=null;
-    const w=$('#bw-'+i);
-    if(w) w.outerHTML=blockHTML(b,i);
-    const nel=$('#bw-'+i) ? $('#bw-'+i).querySelector('[data-bi]') : null;
+    const cur=note.blocks[i];
+    const base=(cur.t==='quote')?'quote':'p';
+    const made=splitMd(lines.join('\n'), base, cur.shadow);
+    if(!made.length) return;
+    const headRel=made.findIndex(function(b){ return /^h[1-3]$/.test(b.t); });
+    const headIdx=i+(headRel>0?headRel:0);
+    note.blocks.splice(i,1, ...made);
+    renderEd(note);
+    const nel=$('#bw-'+headIdx) ? $('#bw-'+headIdx).querySelector('[data-bi]') : null;
+    if(nel){
+      nel.focus();
+      try{
+        const tn=nel.firstChild;
+        const r=document.createRange();
+        if(tn && tn.nodeType===3){ r.setStart(tn,tn.nodeValue.length); r.collapse(true); }
+        else { r.setStart(nel,0); r.collapse(true); }
+        const s=getSelection(); s.removeAllRanges(); s.addRange(r);
+      }catch(err){}
+    }
+    scheduleSave();
+  });
+
+  /* 標題內按 Enter：換行即跳出標題，另起一段（段落內 Enter 仍是段內換行） */
+  bodyEl.addEventListener('keydown', function(e){
+    if(e.key!=='Enter' || e.shiftKey) return;
+    const el=e.target.closest ? e.target.closest('[contenteditable][data-bt]') : null;
+    if(!el) return;
+    const bt=el.dataset.bt;
+    if(!/^h[1-3]$/.test(bt)) return;
+    const i=+el.dataset.bi;
+    const note=state.currentNote;
+    if(!note || !note.blocks[i]) return;
+    e.preventDefault();
+    const full=el.textContent||'';
+    let off=full.length;
+    try{
+      const sel=getSelection();
+      if(sel.rangeCount){
+        const r=sel.getRangeAt(0);
+        if(el.contains(r.startContainer)){
+          const rr=document.createRange();
+          rr.setStart(el,0); rr.setEnd(r.startContainer,r.startOffset);
+          off=rr.toString().length;
+        }
+      }
+    }catch(err){}
+    const head=full.slice(0,off).replace(/\s+$/,'');
+    const tail=full.slice(off).replace(/^\s+/,'');
+    const oldShadow=!!note.blocks[i].shadow;
+    note.blocks[i]={t:bt,text:head,html:null,shadow:oldShadow};
+    note.blocks.splice(i+1,0,{t:'p',text:tail,html:null,shadow:false});
+    renderEd(note);
+    const nel=$('#bw-'+(i+1)) ? $('#bw-'+(i+1)).querySelector('[data-bi]') : null;
     if(nel){
       nel.focus();
       try{
@@ -1638,8 +1728,6 @@ document.addEventListener('click', function(e){
     scheduleSave();
   });
 })();
-
-/* 長按段落 → 拖到新位置 */
 (function(){
   const bodyEl=$('#edBody'); if(!bodyEl) return;
   let timer=null, dragEl=null, sy=0, sx=0, active=false;
