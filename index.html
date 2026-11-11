@@ -316,11 +316,14 @@ a{color:var(--lav-deep);text-decoration:none}
 .tnode{display:flex;align-items:center;gap:10px;padding:8px 12px;position:relative}
 .tnode .tn-b{width:1px;background:var(--line);position:absolute;top:0;bottom:0}
 .tnode .tn-dot{width:8px;height:8px;border-radius:50%;flex:0 0 8px;border:2px solid var(--lav2);background:#fff;margin-left:0}
+.tnode.l1{align-items:center;margin:8px 8px 2px;padding:8px 12px;background:var(--mist);border-radius:9px}
+.tnode.l1 b{font-size:13px;color:var(--lav-deep)}
+.tnode.l1 span{font-size:10.5px;color:var(--ink3)}
+.tnode.l2{padding-left:30px}
+.tnode.l2::before{content:'';position:absolute;left:18px;top:0;bottom:0;width:1px;background:var(--line)}
 .tnode b{font-size:13px;font-weight:600}
 .tnode span{font-size:11px;color:var(--ink3);margin-left:auto}
-.tnode.l1{padding-left:14px}
-.tnode.l2{padding-left:38px}
-.tnode.l3{padding-left:62px}
+.tnode.l3{padding-left:54px}
 
 /* ===== 研究中心 ===== */
 .res-hero{display:flex;gap:14px;align-items:center;padding:17px;border-radius:var(--r-lg);background:linear-gradient(150deg,#FFF7F1,#F9EDF4 60%,#F1EBFB);border:1px solid rgba(172,97,57,.14);box-shadow:var(--sh);margin-top:12px}
@@ -528,6 +531,18 @@ body.bar-on .shell{padding-bottom:184px}
 .rel-item .rl span{display:block;font-size:10.5px;color:var(--ink3);margin-top:1px}
 .rel-item .mini{font-size:10.5px;padding:3px 9px;border-radius:6px;background:var(--mist);color:var(--lav-deep);font-weight:600}
 .rel-item .mini.ghost{background:#fff;border:1px solid var(--line);color:var(--ink3)}
+
+/* 已建立關聯 */
+.rel-box{margin:16px 18px 4px;padding-top:14px;border-top:1px solid var(--line2)}
+.rel-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.rel-head h4{flex:1;font-size:11.5px;letter-spacing:.06em;color:var(--ink3);font-weight:600}
+.rel-head button{font-size:11px;font-weight:600;color:var(--lav-deep);background:var(--mist);border:1px solid var(--line);border-radius:8px;padding:5px 11px;min-height:30px}
+.rel-chips{display:flex;flex-wrap:wrap;gap:8px}
+.rel-chip{display:inline-flex;align-items:center;gap:7px;max-width:100%;background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px 6px 6px 10px;font-size:11.5px;color:var(--ink)}
+.rel-chip .rc{width:6px;height:6px;border-radius:50%;flex:0 0 6px}
+.rel-chip .rt{max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;background:none;border:0;padding:0;color:inherit;font-size:11.5px;text-align:left}
+.rel-chip .rx{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;color:var(--ink3);font-size:14px;line-height:1;background:var(--mist);border:0}
+.rel-empty{font-size:11.5px;color:var(--ink3);line-height:1.6}
 
 /* 編輯器工具列 */
 .ed-bar{
@@ -771,7 +786,7 @@ body.bar-on .shell{padding-bottom:184px}
           <span><i style="background:#39836A"></i>資料類別</span>
           <span style="margin-left:auto">點節點開啟原始筆記</span>
         </div>
-        <div class="hintline">V0.1 以整庫資料自動佈局：每筆資料一個圓，圓越大標題越長，虛線是已建立關聯。拖曳、縮放與人工確認的永久關係於 P4 落地。</div>
+        <div class="hintline">V0.1 以分類分組：每個分類一張卡，卡內每筆資料一個點，顏色區分類型，虛線是已建立的關聯；點任一點開啟原文。拖曳與縮放於 P4 落地。</div>
       </section>
 
       <!-- ================= 研究中心 ================= -->
@@ -860,6 +875,13 @@ body.bar-on .shell{padding-bottom:184px}
             <span id="edSave">已儲存</span><i style="width:3px;height:3px;border-radius:50%;background:var(--ink4)"></i><span id="edTime"></span><i style="width:3px;height:3px;border-radius:50%;background:var(--ink4)"></i><span id="edWords"></span>
           </div>
           <div class="ed-body" id="edBody"></div>
+          <div class="rel-box" id="relBox" style="display:none">
+            <div class="rel-head">
+              <h4 id="relTitle">已建立的關聯</h4>
+              <button data-relpick="1">＋ 建立關聯</button>
+            </div>
+            <div class="rel-chips" id="relList"></div>
+          </div>
           <div class="rel-sug" id="relSug" style="display:none"></div>
         </div>
         <div class="ed-bar">
@@ -1686,25 +1708,13 @@ function graphLayout(notes,W,H,PAD){
   }
   return nodes;
 }
-function bubbleLines(title,r){
-  let t=String(title||'未命名').trim();
-  const maxC=Math.max(3, Math.floor((1.72*r)/9.4));
-  const cap=maxC*2;
-  if(t.length>cap){
-    const i=t.search(/[·：:｜—]/);
-    t = (i>0 && i<=cap) ? t.slice(0,i).trim() : t.slice(0,cap-1)+'…';
-  }
-  if(t.length<=maxC) return [t];
-  let cut=maxC;
-  const alnum=/[A-Za-z0-9]/;
-  if(alnum.test(t[maxC-1]) && alnum.test(t[maxC]||'')){
-    let i=maxC; while(i>0 && alnum.test(t[i-1])) i--;
-    if(i>=3) cut=i;
-    else { const sp=t.indexOf(' ', maxC); cut = (sp>0 && sp<cap) ? sp : maxC; }
-  }
-  let l1=t.slice(0,cut).trim(), l2=t.slice(cut).trim();
-  if(l2.length>maxC) l2=l2.slice(0,maxC-1)+'…';
-  return [l1, l2];
+function graphLabel(t){
+  let q=String(t||'未命名').replace(/（[^）]*）/g,'').replace(/\([^)]*\)/g,'').trim();
+  const cut=q.search(/[·：:｜—]/);
+  if(cut>0) q=q.slice(0,cut).trim();
+  const m=q.match(/^[A-Za-z0-9][A-Za-z0-9+#._-]*/);
+  if(m) return m[0].length>8 ? m[0].slice(0,8)+'…' : m[0];
+  return q.length>5 ? q.slice(0,5)+'…' : q;
 }
 function renderGraph(){
   $$('.gtabs button').forEach(b=> b.classList.toggle('on', b.dataset.g===state.graphMode));
@@ -1712,7 +1722,7 @@ function renderGraph(){
   const notes=state.notes.slice();
   if(!notes.length){
     $('#graphLegend').style.display='none';
-    box.innerHTML='<div class="empty"><b>資料庫還是空的</b>新增筆記後，這裡會把每一筆資料畫成一個可點的圓</div>';
+    box.innerHTML='<div class="empty"><b>資料庫還是空的</b>新增筆記後，這裡會依分類把每一筆資料排成一張可點的地圖</div>';
     return;
   }
   $('#graphLegend').style.display='flex';
@@ -1737,40 +1747,59 @@ function renderGraph(){
           '<span style="margin-left:auto;font-size:10.5px;color:var(--ink4);flex:none">'+esc(x.type)+'</span></button></div>';
       });
     });
-    box.innerHTML='<div class="tree">'+rows+'</div>';
+    box.innerHTML='<div class="tree">'+rows+'</div>'+
+      '<div class="hintline">第一層是分類，第二層是該分類下的資料，縮排與左側引線表示從屬關係。</div>';
     return;
   }
 
-  const W=360, H=430;
-  const nodes=graphLayout(notes,W,H,30);
-  const map={}; nodes.forEach(function(o){ map[o.n.id]=o; });
-  let edges='', bubbles='', relc=0;
+  // 分類群組地圖：每個分類一張卡，卡內每筆資料一個點
+  const W=360, M=10, GAP=8, CW=(W-2*M-GAP)/2, CELL=72, R=11;
+  const groups={};
+  notes.forEach(function(x){ const k=x.category||'未分類'; (groups[k]=groups[k]||[]).push(x); });
+  const ks=Object.keys(groups).sort(function(a,b){
+    if(a==='未分類') return 1; if(b==='未分類') return -1;
+    return groups[b].length-groups[a].length || a.localeCompare(b);
+  });
+  const colY=[M, M], cards=[], nodes=[];
+  ks.forEach(function(k){
+    const items=groups[k].slice().sort(function(a,b){ return (b.updatedAt||0)-(a.updatedAt||0); });
+    const perRow=2, rows=Math.ceil(items.length/perRow), ch=24+rows*46+10;
+    const col = colY[0]<=colY[1] ? 0 : 1;
+    const x = M + col*(CW+GAP), y = colY[col];
+    colY[col]+= ch+GAP;
+    const list=[];
+    items.forEach(function(o,i){
+      const nx=x+10+36+(i%perRow)*CELL, ny=y+26+Math.floor(i/perRow)*46+12;
+      list.push({n:o,x:nx,y:ny});
+      nodes.push({n:o,x:nx,y:ny});
+    });
+    cards.push({name:k,count:items.length,x:x,y:y,w:CW,h:ch,items:list});
+  });
+  let edges='';
   nodes.forEach(function(o){
     (o.n.related||[]).forEach(function(rid){
-      const t=map[rid]; if(!t) return;
-      relc++;
-      if(o.n.id>rid) return;
-      edges+='<line x1="'+o.x.toFixed(1)+'" y1="'+o.y.toFixed(1)+'" x2="'+t.x.toFixed(1)+'" y2="'+t.y.toFixed(1)+'" stroke="rgba(103,85,222,.34)" stroke-width="1.1" stroke-dasharray="3 4" stroke-linecap="round"/>';
+      const t=nodes.find(function(z){ return z.n.id===rid; });
+      if(!t || o.n.id>rid) return;
+      edges+='<line x1="'+o.x.toFixed(1)+'" y1="'+(o.y).toFixed(1)+'" x2="'+t.x.toFixed(1)+'" y2="'+t.y.toFixed(1)+'" stroke="rgba(103,85,222,.30)" stroke-width="1.2" stroke-dasharray="3 5" stroke-linecap="round"/>';
     });
   });
-  nodes.forEach(function(o){
-    const c=typeColor(o.n.type);
-    const lines=bubbleLines(o.n.title,o.r);
-    const fs=lines.length>1?9.2:9.9;
-    const yy=o.y-(lines.length>1?5.3:3.3);
-    const txt=lines.map(function(s,i){
-      return '<text x="'+o.x.toFixed(1)+'" y="'+(yy+i*10.8).toFixed(1)+'" text-anchor="middle" font-size="'+fs+'" fill="#2A2545" style="paint-order:stroke;stroke:#fff;stroke-width:2.6;stroke-opacity:.92">'+esc(s)+'</text>';
-    }).join('');
-    bubbles+='<g class="g-node" data-open="'+o.n.id+'" style="cursor:pointer">'+
-      '<circle cx="'+o.x.toFixed(1)+'" cy="'+o.y.toFixed(1)+'" r="'+o.r.toFixed(1)+'" fill="'+c+'" fill-opacity=".09" stroke="'+c+'" stroke-opacity=".5" stroke-width="1.2" filter="url(#soft)"/>'+
-      '<circle cx="'+(o.x-o.r/2.6).toFixed(1)+'" cy="'+(o.y-o.r/2.6).toFixed(1)+'" r="2.4" fill="'+c+'" fill-opacity=".6"/>'+
-      txt+'</g>';
+  let html='<defs><filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#3A2A94" flood-opacity=".07"/></filter></defs>';
+  cards.forEach(function(c){
+    html+='<g><rect x="'+c.x+'" y="'+c.y+'" width="'+c.w+'" height="'+c.h+'" rx="13" fill="#fff" stroke="#E7E3F4" filter="url(#soft)"/>'+
+      '<text x="'+(c.x+12)+'" y="'+(c.y+17)+'" font-size="10.5" font-weight="600" fill="#463C86">'+esc(c.name)+'</text>'+
+      '<text x="'+(c.x+c.w-12)+'" y="'+(c.y+17)+'" text-anchor="end" font-size="9" fill="#A19AB5">'+c.count+' 筆</text>'+
+      '<line x1="'+(c.x+12)+'" y1="'+(c.y+22)+'" x2="'+(c.x+c.w-12)+'" y2="'+(c.y+22)+'" stroke="#EFECF8" stroke-width="1"/></g>';
+    c.items.forEach(function(o){
+      const col=typeColor(o.n.type);
+      html+='<g class="g-node" data-open="'+o.n.id+'" style="cursor:pointer">'+
+        '<circle cx="'+o.x+'" cy="'+o.y+'" r="'+R+'" fill="'+col+'" fill-opacity=".14" stroke="'+col+'" stroke-opacity=".55" stroke-width="1.2"/>'+
+        '<circle cx="'+(o.x-4)+'" cy="'+(o.y-4)+'" r="2" fill="'+col+'" fill-opacity=".55"/>'+
+        '<text x="'+o.x+'" y="'+(o.y+22)+'" text-anchor="middle" font-size="8.8" fill="#2A2545" style="paint-order:stroke;stroke:#fff;stroke-width:2.4;stroke-opacity:.9">'+esc(graphLabel(o.n.title))+'</text></g>';
+    });
   });
-  box.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="全部資料的知識圖譜">'+
-    '<defs><filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#3A2A94" flood-opacity=".10"/></filter></defs>'+
-    edges+bubbles+
-    '<text x="'+(W/2)+'" y="'+(H-9)+'" text-anchor="middle" font-size="9" fill="#8D87A5">顏色＝資料類型 · 虛線＝已建立關聯 · 點圈開啟原文</text>'+
-  '</svg>';
+  const H=Math.max(colY[0],colY[1])+18;
+  box.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="依分類排列的全庫資料地圖">'+html+edges+
+    '<text x="'+(W/2)+'" y="'+(H-6)+'" text-anchor="middle" font-size="8.6" fill="#8D87A5">點＝一筆資料 · 顏色＝類型 · 虛線＝已建立關聯</text></svg>';
 }
 
 /* =========================================================
@@ -2126,6 +2155,7 @@ function renderEd(note){
   $('#edSave').textContent='已儲存';
   $('#edSave').style.color='var(--jade)';
   renderSuggestions(note);
+  renderRelated(note);
 }
 function renderSuggestions(note){
   const box=$('#relSug');
@@ -2133,6 +2163,7 @@ function renderSuggestions(note){
   const res=[];
   state.notes.forEach(function(o){
     if(o.id===note.id) return;
+    if((note.related||[]).indexOf(o.id)>=0) return;
     const oText=(o.title||'')+' '+textOf(o);
     const hits=[];
     (note.tags||[]).forEach(function(t){ if(oText.indexOf(t)>=0 && hits.indexOf(t)<0) hits.push(t); });
@@ -2152,6 +2183,48 @@ function renderSuggestions(note){
       '<button class="mini" data-reladd="'+r.note.id+'">建立關聯</button>'+
       '<button class="mini ghost" data-relskip="1">忽略</button></div>';
   }).join('');
+}
+function relatedNotes(note){
+  return ((note&&note.related)||[]).map(function(id){
+    return state.notes.find(function(n){ return n.id===id; });
+  }).filter(Boolean);
+}
+function renderRelated(note){
+  const box=$('#relBox'); if(!box || !note) return;
+  const list=relatedNotes(note);
+  $('#relTitle').textContent='已建立的關聯'+(list.length?' · '+list.length+' 條':'');
+  $('#relList').innerHTML = list.length ? list.map(function(o){
+    return '<div class="rel-chip"><span class="rc" style="background:'+typeColor(o.type)+'"></span>'+
+      '<button class="rt" data-relopen="'+o.id+'">'+esc(o.title||'未命名')+'</button>'+
+      '<button class="rx" data-relunlink="'+o.id+'" aria-label="解除關聯">×</button></div>';
+  }).join('') : '<div class="rel-empty">尚無關聯。按右上「＋ 建立關聯」從資料庫挑一篇即成，建立後留在本頁，不會被跳走。</div>';
+  box.style.display='block';
+}
+function openRelPicker(){
+  const n=state.currentNote; if(!n) return;
+  const list=state.notes.filter(function(o){
+    return o.id!==n.id && (n.related||[]).indexOf(o.id)<0;
+  }).sort(function(a,b){ return (b.updatedAt||0)-(a.updatedAt||0); });
+  if(!list.length){ toast('沒有其他可建立關聯的資料'); return; }
+  openSheet('建立關聯 · 選一篇資料',
+    '<div class="ovl-list">'+list.map(function(o){
+      return '<button class="orow" data-relto="'+o.id+'"><span class="tick"><i style="width:7px;height:7px;border-radius:50%;background:'+typeColor(o.type)+'"></i></span>'+
+        '<b>'+esc(o.title||'未命名')+'</b><small>'+esc(o.type)+' · '+esc(o.category||'未分類')+'</small></button>';
+    }).join('')+'</div>'+
+    '<div class="ovl-note">建立後留在本頁，關聯雙向記錄，之後可在任一篇的「已建立的關聯」開啟。</div>','');
+}
+function addRelation(id){
+  const n=state.currentNote; if(!n) return;
+  harvest();
+  n.related=n.related||[];
+  if(n.related.indexOf(id)<0) n.related.push(id);
+  const o=state.notes.find(function(x){ return x.id===id; });
+  if(o){ o.related=o.related||[]; if(o.related.indexOf(n.id)<0) o.related.push(n.id); }
+  renderRelated(n);
+  renderSuggestions(n);
+  if(state.saveTimer){ clearTimeout(state.saveTimer); state.saveTimer=null; }
+  flushSave();
+  toast('已建立關聯，可在下方「已建立的關聯」開啟');
 }
 function harvest(){
   const note=state.currentNote; if(!note) return null;
@@ -2311,21 +2384,30 @@ document.addEventListener('click', function(e){
   if(del){ e.stopPropagation(); harvest(); const i=+del.dataset.del; state.currentNote.blocks.splice(i,1); state.htmlEdit=null; renderEd(state.currentNote); flushSave(); return; }
   const addrow=e.target.closest('[data-addrow]');
   if(addrow){ harvest(); const i=+addrow.dataset.addrow; const b=state.currentNote.blocks[i]; const cols=(b.rows&&b.rows[0]?b.rows[0].length:3); b.rows.push(new Array(cols).fill('')); renderEd(state.currentNote); flushSave(); return; }
-  const reladd=e.target.closest('[data-reladd]');
-  if(reladd){
-    const id=reladd.dataset.reladd; const n=state.currentNote;
-    n.related=n.related||[];
-    if(n.related.indexOf(id)<0) n.related.push(id);
-    reladd.textContent='已建立 · 開啟';
-    reladd.style.background='var(--jade-mist)'; reladd.style.color='var(--jade)';
-    if(state.saveTimer){ clearTimeout(state.saveTimer); state.saveTimer=null; }
-    flushSave().then(function(){
-      const target=state.notes.find(x=>x.id===id);
-      toast('已建立關聯，正在開啟'+(target?'「'+target.title+'」':'這篇資料'));
-      setTimeout(function(){ go('note',{id:id}); },260);
-    });
+  const relpick=e.target.closest('[data-relpick]');
+  if(relpick){ openRelPicker(); return; }
+  const relto=e.target.closest('[data-relto]');
+  if(relto){ const id=relto.dataset.relto; closeSheet(); addRelation(id); return; }
+  const relopen=e.target.closest('[data-relopen]');
+  if(relopen){
+    const id=relopen.dataset.relopen;
+    harvest(); if(state.saveTimer){ clearTimeout(state.saveTimer); state.saveTimer=null; }
+    flushSave().then(function(){ go('note',{id:id}); });
     return;
   }
+  const relun=e.target.closest('[data-relunlink]');
+  if(relun){
+    const id=relun.dataset.relunlink, n=state.currentNote;
+    n.related=(n.related||[]).filter(function(x){ return x!==id; });
+    const o=state.notes.find(function(x){ return x.id===id; });
+    if(o) o.related=(o.related||[]).filter(function(x){ return x!==n.id; });
+    renderRelated(n); renderSuggestions(n);
+    if(state.saveTimer){ clearTimeout(state.saveTimer); state.saveTimer=null; }
+    flushSave(); toast('已解除關聯');
+    return;
+  }
+  const reladd=e.target.closest('[data-reladd]');
+  if(reladd){ addRelation(reladd.dataset.reladd); return; }
   const relskip=e.target.closest('[data-relskip]');
   if(relskip){ const row=relskip.closest('.rel-item'); if(row) row.remove(); return; }
 });
