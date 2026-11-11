@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
@@ -296,6 +296,20 @@ a{color:var(--lav-deep);text-decoration:none}
 .tcard em{font-style:normal;font-size:19px;font-weight:600;color:var(--ink);letter-spacing:.01em}
 .tcard em small{font-size:10.5px;color:var(--ink3);font-weight:400;margin-left:2px}
 @media(min-width:620px){ .tcards{grid-template-columns:repeat(4,minmax(0,1fr))} }
+@media(min-width:760px){ .stage{max-width:580px;margin-left:auto;margin-right:auto} }
+
+/* 新增資料面板 */
+.nn-l{display:block;font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--ink3);margin:14px 0 6px}
+.nn-chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:2px}
+
+/* 標籤牆 */
+.tagwall{display:flex;flex-wrap:wrap;gap:7px;padding:12px 12px 14px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--paper);box-shadow:var(--sh)}
+.tchip{display:inline-flex;align-items:center;gap:6px;background:var(--mist);color:var(--lav-deep);border:1px solid transparent;border-radius:8px;padding:6px 9px;font-size:12px;font-weight:600;transition:.16s}
+.tchip span{font-size:10.5px;color:var(--ink3);font-weight:500}
+.tchip:hover{background:#EAE6FB}
+.tchip.on{background:var(--lav);color:#fff;border-color:var(--lav)}
+.tchip.on span{color:rgba(255,255,255,.82)}
+.row-tags{display:block;font-size:10.5px;color:var(--lav-deep);letter-spacing:.02em;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ===== 圖譜 ===== */
 .gtabs{display:inline-flex;background:var(--mist);padding:3px;border-radius:11px;gap:2px;margin-top:10px}
@@ -626,7 +640,7 @@ body.bar-on .shell{padding-bottom:184px}
           <stop stop-color="#8E7DF2"/><stop offset="1" stop-color="#5A47D6"/>
         </linearGradient></defs>
       </svg>
-      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1 · r3</span></div>
+      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1 · r4</span></div>
       <button class="rail-toggle" id="railToggle" aria-label="收合側欄" title="收合側欄">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 6.5L9 12l5.5 5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
@@ -788,6 +802,11 @@ body.bar-on .shell{padding-bottom:184px}
         </div>
 
         <div class="block">
+          <div class="block-head"><h2>標籤<em>第二層索引 · 可多個</em></h2><span class="link-more" id="tagFilterHint">點標籤可篩選</span></div>
+          <div class="tagwall" id="tagWall"></div>
+        </div>
+
+        <div class="block">
           <div class="block-head"><h2 id="libListTitle">全部資料</h2><span class="link-more" id="libFilterHint">點上方卡片可篩選</span></div>
           <div class="rows" id="libRows"></div>
         </div>
@@ -873,7 +892,7 @@ body.bar-on .shell{padding-bottom:184px}
 
         <div class="sgroup">
           <h3>關於</h3>
-          <div class="srow"><div class="s-main"><b>Knowledge Space · 原型 V0.1 · r3</b><span>單檔 HTML + IndexedDB，原生 JS</span></div><span class="s-val">2026-11-12</span></div>
+          <div class="srow"><div class="s-main"><b>Knowledge Space · 原型 V0.1 · r4</b><span>單檔 HTML + IndexedDB，原生 JS</span></div><span class="s-val">2026-11-12</span></div>
           <div class="srow"><div class="s-main"><b>正式版技術棧</b><span>React · TypeScript · Vite · Dexie · Orama · XYFlow · OpenCC</span></div><span class="s-val" style="color:var(--ink4)">規劃中</span></div>
         </div>
         <div class="hintline">提醒：iPhone Safari 若長期未開啟，可能回收網站資料。備份是唯一保險，請定期匯出。</div>
@@ -1264,7 +1283,7 @@ function SEED(){
    5. 狀態
    ========================================================= */
 const state={
-  notes:[], view:'home', notesFilter:'全部', libFilter:'全部', catFilter:null,
+  notes:[], view:'home', notesFilter:'全部', libFilter:'全部', catFilter:null, tagFilter:null,
   graphMode:'radial', currentNote:null, saveTimer:null, dirty:false,
   searchQ:'', searchType:'全部', idxCache:new Map(), templates:[], htmlEdit:null,
   selMode:false, selView:null, selected:{}, lastDeleted:null
@@ -1404,7 +1423,9 @@ function rowHTML(note, extra, sel){
     '<span class="row-ico ico-'+c+'">'+(TYPE_ICON[note.type]||'記')+'</span>'+
     '<span class="row-main"><b>'+esc(note.title||'未命名筆記')+'</b>'+
       '<span><span class="badge b-'+c+'">'+note.type+'</span><i></i>'+esc(note.category||'未分類')+
-      '<i></i>'+(extra||fmtRel(note.updatedAt))+'</span></span>'+
+      '<i></i>'+(extra||fmtRel(note.updatedAt))+'</span>'+
+      ((note.tags&&note.tags.length)?'<span class="row-tags">'+note.tags.slice(0,4).map(function(t){ return '#'+esc(t); }).join(' ')+((note.tags.length>4)?' +'+(note.tags.length-4):'')+'</span>':'')+
+    '</span>'+
     end+
   '</button></div>';
 }
@@ -1549,7 +1570,13 @@ function notesList(){
 }
 function libList(){
   return (state.libFilter==='全部' ? state.notes : state.notes.filter(n=>n.type===state.libFilter))
+    .filter(n=> state.tagFilter ? ((n.tags||[]).indexOf(state.tagFilter)>=0) : true)
     .slice().sort((a,b)=>b.updatedAt-a.updatedAt);
+}
+function allTags(){
+  const m={};
+  state.notes.forEach(function(n){ (n.tags||[]).forEach(function(t){ m[t]=(m[t]||0)+1; }); });
+  return Object.keys(m).map(function(k){ return {t:k, n:m[k]}; }).sort(function(a,b){ return b.n-a.n || a.t.localeCompare(b.t); });
 }
 function selActive(view){
   return state.selMode && state.selView===view;
@@ -1699,11 +1726,19 @@ function renderLibrary(){
   }).join('') || '<div class="empty">尚無分類</div>';
 
   const filtered = libList();
+  $('#tagWall').innerHTML = (function(){
+    const ts=allTags();
+    if(!ts.length) return '<div class="empty" style="padding:14px 2px"><b>尚無標籤</b>在筆記裡按「＋ 標籤」加入，例如 #傷寒論</div>';
+    return ts.map(function(x){
+      return '<button class="tchip'+(state.tagFilter===x.t?' on':'')+'" data-tagfilter="'+esc(x.t)+'">#'+esc(x.t)+'<span>'+x.n+'</span></button>';
+    }).join('');
+  })();
+  $('#tagFilterHint').textContent = state.tagFilter ? '點已選標籤取消' : '點標籤可篩選';
   const sel=selActive('library');
   $('#btnSelLib').classList.toggle('on', !!sel);
   $('#btnSelLib').setAttribute('aria-pressed', sel?'true':'false');
-  $('#libListTitle').textContent = state.libFilter==='全部' ? '全部資料' : state.libFilter+'資料';
-  $('#libFilterHint').textContent = state.libFilter==='全部' ? '點上方卡片可篩選' : '再次點卡片取消篩選';
+  $('#libListTitle').textContent = (state.tagFilter ? '#'+state.tagFilter : (state.libFilter==='全部' ? '全部資料' : state.libFilter+'資料'));
+  $('#libFilterHint').textContent = state.tagFilter ? (filtered.length+' 筆 · 點標籤取消') : (state.libFilter==='全部' ? '點上方卡片可篩選' : '再次點卡片取消篩選');
   $('#libRows').innerHTML = filtered.map(n=>rowHTML(n, null, sel)).join('')
     || '<div class="empty">此類型尚無資料</div>';
   syncSelUI();
@@ -2257,18 +2292,22 @@ function renderTags(note){
 }
 function openTagSheet(){
   const note=state.currentNote; if(!note) return;
+  const existing=allTags().filter(function(x){ return (note.tags||[]).indexOf(x.t)<0; }).slice(0,12);
   openSheet('新增標籤',
     '<input id="tagInput" placeholder="例：傷寒論、桂枝湯、臨床劑量" style="width:100%;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff" autocomplete="off">'+
-    '<div class="ovl-note">標籤可有可無、可多個，用於搜尋與關聯推薦，不影響分類。輸入後按「新增」。</div>',
+    (existing.length?'<div class="nn-chips" style="margin-top:10px">'+existing.map(function(x){ return '<button class="chip" data-tagpick="'+esc(x.t)+'">#'+esc(x.t)+' <i style="font-style:normal;opacity:.45">'+x.n+'</i></button>'; }).join('')+'</div>':'')+
+    '<div class="ovl-note">標籤可有可無、可多個，用於搜尋與關聯推薦，不影響分類。點下方既有標籤可快速填入。</div>',
     '新增', function(){
       const el=$('#tagInput');
       const v=(el?el.value:'').trim().replace(/^#+/,'');
       if(!v) return;
       note.tags=note.tags||[];
       if(note.tags.indexOf(v)<0) note.tags.push(v);
+      note.updatedAt=Date.now();
       renderTags(note); renderSuggestions(note);
       if(state.saveTimer){ clearTimeout(state.saveTimer); state.saveTimer=null; }
       flushSave(); toast('已加入標籤 #'+v);
+      if(state.view==='library') renderLibrary();
     });
   setTimeout(function(){ const el=$('#tagInput'); if(el) el.focus(); }, 60);
 }
@@ -2448,15 +2487,44 @@ async function loadNote(id){
 }
 function openNote(id){ go('note',{id:id}); }
 async function createNote(){
-  const note={
-    id:uid(), title:'未命名筆記', type:'筆記', category:'未分類', tags:[], blocks:[{t:'p',text:''}],
-    favorite:false, related:[], createdAt:Date.now(), updatedAt:Date.now(), deleted:false
-  };
-  state.notes.push(note);
-  await Store.put(note);
-  openNote(note.id);
-  setTimeout(function(){ $('#edTitle').focus(); },120);
-  toast('已建立新筆記');
+  openNewNoteSheet();
+}
+let nnSel={type:'筆記', category:'未分類'};
+function openNewNoteSheet(){
+  nnSel={type:'筆記', category:'未分類'};
+  const cats=Object.keys(state.notes.reduce(function(m,n){ m[n.category||'未分類']=1; return m; }, {}));
+  const catOpts=['未分類'].concat(cats.filter(function(c){ return c!=='未分類'; }));
+  const tags=allTags().slice(0,10);
+  openSheet('新增資料',
+    '<label class="nn-l">標題</label>'+
+    '<input id="nnTitle" placeholder="例：桂枝湯加減辨證思路" style="width:100%;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff" autocomplete="off">'+
+    '<label class="nn-l">類型 · 資料類型固定，之後可改</label>'+
+    '<div class="nn-chips">'+TYPE_ORDER.map(function(t){
+      return '<button class="chip'+(t==='筆記'?' on':'')+'" data-nntype="'+t+'">'+t+'</button>';
+    }).join('')+'</div>'+
+    '<label class="nn-l">分類 · 像資料夾，一筆一個</label>'+
+    '<div class="nn-chips">'+catOpts.map(function(c){
+      return '<button class="chip'+(c==='未分類'?' on':'')+'" data-nncat="'+esc(c)+'">'+esc(c)+'</button>';
+    }).join('')+'</div>'+
+    '<label class="nn-l">標籤 · 可多個，用逗號分隔</label>'+
+    '<input id="nnTags" placeholder="#傷寒論, #臨床" style="width:100%;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff" autocomplete="off">'+
+    (tags.length?'<div class="nn-chips" style="margin-top:8px">'+tags.map(function(x){ return '<button class="chip" data-nnaddtag="'+esc(x.t)+'">#'+esc(x.t)+'</button>'; }).join('')+'</div>':'')+
+    '<div class="ovl-note">類型決定配色與篩選；分類決定放在哪個資料夾；標籤用於搜尋與關聯推薦。三者互不影響。</div>',
+    '建立', function(){
+      const titleEl=$('#nnTitle'), tagEl=$('#nnTags');
+      const title=(titleEl&&titleEl.value||'').trim()||'未命名筆記';
+      const tagsIn=(tagEl&&tagEl.value||'').split(/[,，、\s]+/).map(function(s){ return s.replace(/^#+/,'').trim(); }).filter(Boolean);
+      const note={
+        id:uid(), title:title, type:nnSel.type, category:nnSel.category, tags:tagsIn,
+        blocks:[{t:'p',text:''}], favorite:false, related:[],
+        createdAt:Date.now(), updatedAt:Date.now(), deleted:false, reviewDue:''
+      };
+      state.notes.push(note);
+      Store.put(note);
+      openNote(note.id);
+      toast('已建立「'+title+'」· '+nnSel.type+'/'+nnSel.category);
+    });
+  setTimeout(function(){ const el=$('#nnTitle'); if(el) el.focus(); }, 60);
 }
 
 /* =========================================================
@@ -2478,6 +2546,18 @@ document.addEventListener('click', function(e){
     return; }
   const tagadd=e.target.closest('[data-tagadd]');
   if(tagadd){ openTagSheet(); return; }
+  const nnt=e.target.closest('[data-nntype]');
+  if(nnt){ nnSel.type=nnt.dataset.nntype; $$('#ovlBody [data-nntype]').forEach(function(b){ b.classList.toggle('on', b.dataset.nntype===nnSel.type); }); return; }
+  const nnc=e.target.closest('[data-nncat]');
+  if(nnc){ nnSel.category=nnc.dataset.nncat; $$('#ovlBody [data-nncat]').forEach(function(b){ b.classList.toggle('on', b.dataset.nncat===nnSel.category); }); return; }
+  const nntag=e.target.closest('[data-nnaddtag]');
+  if(nntag){ const el=$('#nnTags'); if(el){ const t=nntag.dataset.nnaddtag; el.value=el.value? (el.value.replace(/[,\s]+$/,'')+', #'+t) : '#'+t; } return; }
+  const tgf=e.target.closest('[data-tagfilter]');
+  if(tgf){ const t=tgf.dataset.tagfilter;
+    flipList($('#libRows'), function(){ state.tagFilter = state.tagFilter===t ? null : t; renderLibrary(); });
+    return; }
+  const tagpick=e.target.closest('[data-tagpick]');
+  if(tagpick){ const el=$('#tagInput'); if(el){ el.value=tagpick.dataset.tagpick; } return; }
   const tagdel=e.target.closest('[data-tagdel]');
   if(tagdel){ removeTag(tagdel.dataset.tagdel); return; }
   const cat=e.target.closest('[data-cat]');
