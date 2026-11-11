@@ -626,7 +626,7 @@ body.bar-on .shell{padding-bottom:184px}
           <stop stop-color="#8E7DF2"/><stop offset="1" stop-color="#5A47D6"/>
         </linearGradient></defs>
       </svg>
-      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1</span></div>
+      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1 · r3</span></div>
       <button class="rail-toggle" id="railToggle" aria-label="收合側欄" title="收合側欄">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 6.5L9 12l5.5 5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
@@ -873,7 +873,7 @@ body.bar-on .shell{padding-bottom:184px}
 
         <div class="sgroup">
           <h3>關於</h3>
-          <div class="srow"><div class="s-main"><b>Knowledge Space · 原型 V0.1</b><span>單檔 HTML + IndexedDB，原生 JS</span></div><span class="s-val">2026-11-11</span></div>
+          <div class="srow"><div class="s-main"><b>Knowledge Space · 原型 V0.1 · r3</b><span>單檔 HTML + IndexedDB，原生 JS</span></div><span class="s-val">2026-11-12</span></div>
           <div class="srow"><div class="s-main"><b>正式版技術棧</b><span>React · TypeScript · Vite · Dexie · Orama · XYFlow · OpenCC</span></div><span class="s-val" style="color:var(--ink4)">規劃中</span></div>
         </div>
         <div class="hintline">提醒：iPhone Safari 若長期未開啟，可能回收網站資料。備份是唯一保險，請定期匯出。</div>
@@ -2297,21 +2297,26 @@ function flipList(box, doRender){
       if(Math.abs(d)>1){
         el.style.transition='none';
         el.style.transform='translateY('+d.toFixed(1)+'px)';
-        requestAnimationFrame(function(){
-          el.style.transition='transform .46s cubic-bezier(.2,0,.2,1)';
-          el.style.transform='translateY(0)';
-        });
       }
     } else {
       el.style.opacity='0';
       el.style.transform='scale(.94)';
-      requestAnimationFrame(function(){
+    }
+  });
+  // 先讓被篩掉的列淡出，再讓留下的列補位，避免文字疊在一起
+  setTimeout(function(){
+    box.querySelectorAll('.swipe:not(.flip-ghost)').forEach(function(el){
+      const p=prev.get(el.dataset.sid);
+      if(p){
+        el.style.transition='transform .46s cubic-bezier(.2,0,.2,1)';
+        el.style.transform='translateY(0)';
+      } else {
         el.style.transition='opacity .3s ease, transform .36s cubic-bezier(.2,0,.2,1)';
         el.style.opacity='1';
         el.style.transform='scale(1)';
-      });
-    }
-  });
+      }
+    });
+  }, 120);
   // 被篩掉的那幾列：原位置縮小淡出後移除
   if(box.style.position!=='relative') box.style.position='relative';
   prev.forEach(function(p,id){
@@ -2323,10 +2328,13 @@ function flipList(box, doRender){
     g.style.top=(p.top-boxTop).toFixed(1)+'px';
     g.style.zIndex='4'; g.style.pointerEvents='none';
     g.style.transformOrigin='center';
-    g.style.transition='opacity .26s ease, transform .3s cubic-bezier(.2,0,.2,1)';
+    g.style.willChange='opacity, transform';
     box.appendChild(g);
-    requestAnimationFrame(function(){ g.style.opacity='0'; g.style.transform='scale(.92)'; });
-    setTimeout(function(){ g.remove(); }, 330);
+    void g.offsetHeight;                       // 先讓初始狀態落地，才有真正的過場
+    g.style.transition='opacity .22s ease, transform .26s cubic-bezier(.2,0,.2,1)';
+    g.style.opacity='0';
+    g.style.transform='scale(.9)';
+    setTimeout(function(){ g.remove(); }, 320);
   });
 }
 function relatedNotes(note){  return ((note&&note.related)||[]).map(function(id){
@@ -2462,7 +2470,12 @@ document.addEventListener('click', function(e){
   const cc=e.target.closest('[data-clearcat]');
   if(cc){ flipList($('#noteRows'), function(){ state.catFilter=null; renderNotes(); }); return; }
   const lb=e.target.closest('[data-libtype]');
-  if(lb){ const t=lb.dataset.libtype; flipList($('#libRows'), function(){ state.libFilter = state.libFilter===t ? '全部' : t; renderLibrary(); }); return; }
+  if(lb){ const t=lb.dataset.libtype; const rows=$('#libRows');
+    const apply=function(){ state.libFilter = state.libFilter===t ? '全部' : t; renderLibrary(); };
+    const y=rows.getBoundingClientRect().top;
+    if(y>window.innerHeight*0.5){ rows.scrollIntoView({block:'center'}); setTimeout(function(){ flipList(rows, apply); }, 70); }
+    else flipList(rows, apply);
+    return; }
   const tagadd=e.target.closest('[data-tagadd]');
   if(tagadd){ openTagSheet(); return; }
   const tagdel=e.target.closest('[data-tagdel]');
