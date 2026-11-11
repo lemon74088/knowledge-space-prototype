@@ -780,7 +780,7 @@ body.blkdrag #edBody{touch-action:none}
           <stop stop-color="#8E7DF2"/><stop offset="1" stop-color="#5A47D6"/>
         </linearGradient></defs>
       </svg>
-      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1 · r15</span></div>
+      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1 · r16</span></div>
       <button class="rail-toggle" id="railToggle" aria-label="收合側欄" title="收合側欄">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 6.5L9 12l5.5 5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
@@ -1064,12 +1064,13 @@ body.blkdrag #edBody{touch-action:none}
 
         <div class="sgroup">
           <h3>危險操作</h3>
-          <div class="srow" id="rowReset" role="button" tabindex="0"><div class="s-main"><b class="danger">清除本機資料</b><span>刪除後無法復原，請先匯出備份</span></div><span class="s-val danger">清除</span></div>
+          <div class="srow" id="rowReset" role="button" tabindex="0"><div class="s-main"><b class="danger">清除本機資料</b><span>清除後回到空白狀態，不再自動帶入範例；請先匯出備份</span></div><span class="s-val danger">清除</span></div>
+          <div class="srow" id="rowSeed" role="button" tabindex="0"><div class="s-main"><b>載入示範資料</b><span>想看完整版面時用，會先清空現有資料</span></div><span class="s-val">載入</span></div>
         </div>
 
         <div class="sgroup">
           <h3>關於</h3>
-          <div class="srow"><div class="s-main"><b>Knowledge Space · 原型 V0.1 · r13</b><span>單檔 HTML + IndexedDB，原生 JS</span></div><span class="s-val">2026-11-12</span></div>
+          <div class="srow"><div class="s-main"><b>Knowledge Space · 原型 V0.1 · r16</b><span>單檔 HTML + IndexedDB，原生 JS</span></div><span class="s-val">2026-11-12</span></div>
           <div class="srow"><div class="s-main"><b>正式版技術棧</b><span>React · TypeScript · Vite · Dexie · Orama · XYFlow · OpenCC</span></div><span class="s-val" style="color:var(--ink4)">規劃中</span></div>
         </div>
         <div class="hintline">提醒：iPhone Safari 若長期未開啟，可能回收網站資料。備份是唯一保險，請定期匯出。</div>
@@ -2732,11 +2733,33 @@ function applyFontScale(z, save){
 }
 async function resetAll(){
   if(!confirm('清除本機所有資料？此動作無法復原。')) return;
-  if(!confirm('再次確認：所有筆記、日記、收藏都會被刪除（研究線與模板不受影響）。')) return;
+  if(!confirm('再次確認：筆記、模板、研究線、自訂類型都會被刪除，清除後回到空白狀態。')) return;
+  await Store.clear();
+  state.notes=[]; state.templates=[]; state.research=[]; state.researchMeta={title:'研究中心', sub:''};
+  state.idxCache.clear();
+  state.notesFilter='全部'; state.libFilter='全部'; state.catFilter=null; state.tagFilter=null;
+  await Store.metaSet('types', TYPE_DEFAULTS.map(function(t){ return {name:t.name,color:t.color}; }));
+  await Store.metaSet('templates', []);
+  await Store.metaSet('research', []);
+  await Store.metaSet('researchMeta', state.researchMeta);
+  state.types=TYPE_DEFAULTS.map(function(t){ return {name:t.name,color:t.color}; });
+  state.templates=[];
+  try{ localStorage.removeItem('ks_v01_notes'); localStorage.removeItem('ks_v01_meta'); }catch(e){}
+  await Store.metaSet('types', state.types);
+  renderHome(); renderSettings();
+  const safe={home:1,notes:1,library:1,graph:1,research:1};
+  if(safe[state.view]) go(state.view);
+  toast('已清除，目前為空白狀態');
+}
+async function loadDemo(){
+  if(state.notes.length && !confirm('目前已有資料。載入示範會先清空再寫入示範筆記，要繼續嗎？')) return;
   await Store.clear();
   const seed=SEED(); await Store.bulk(seed);
   state.notes=await Store.all(); state.idxCache.clear();
-  renderHome(); renderSettings(); toast('已清除並寫入示範資料');
+  renderHome(); renderSettings();
+  const safe={home:1,notes:1,library:1,graph:1,research:1};
+  if(safe[state.view]) go(state.view);
+  toast('已載入示範資料');
 }
 
 /* =========================================================
@@ -3701,6 +3724,8 @@ $('#fileImport').addEventListener('change', function(ev){
 });
 $('#rowReset').addEventListener('click', resetAll);
 $('#rowReset').addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); resetAll(); } });
+$('#rowSeed').addEventListener('click', loadDemo);
+$('#rowSeed').addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); loadDemo(); } });
 
 /* 側欄收合（桌機）：寬度平滑收窄，只留圖示 */
 const LS_RAIL='ks_v01_rail';
@@ -3756,11 +3781,7 @@ function applyRail(collapsed){
   (function(){ const z=parseFloat(String(localStorage.getItem('ks_fontscale')||'1')); window.__fsZoom=(z&&z>0)?z:1; if(window.__fsZoom!==1) document.documentElement.style.zoom=window.__fsZoom; })();
   await Store.init();
   let all=await Store.all();
-  if(!all || !all.length){
-    const seed=SEED();
-    await Store.bulk(seed);
-    all=await Store.all();
-  }
+  /* 首次啟動不寫入示範資料：預設為空，示範可在設定頁手動載入 */
   state.notes=(all||[]).filter(n=>!n.deleted);
   const ty=await Store.metaGet('types');
   const validTypes=Array.isArray(ty)&&ty.length&&ty.every(function(t){ return t&&typeof t.name==='string'&&t.name; });
@@ -3768,12 +3789,12 @@ function applyRail(collapsed){
   const missing=(state.notes||[]).map(function(n){ return n.type; }).filter(function(t){ return t && state.types.every(function(x){ return x.name!==t; }); });
   missing.forEach(function(t){ state.types.push({name:t,color:TYPE_PALETTE[state.types.length%TYPE_PALETTE.length]}); });
   const tpl=await Store.metaGet('templates');
-  state.templates = Array.isArray(tpl) && tpl.length ? tpl : defaultTemplates();
-  if(!Array.isArray(tpl) || !tpl.length) await Store.metaSet('templates', state.templates);
+  state.templates = Array.isArray(tpl) ? tpl : [];
+  if(!Array.isArray(tpl)) await Store.metaSet('templates', state.templates);
   const rl=await Store.metaGet('research');
-  state.research = Array.isArray(rl) ? rl : JSON.parse(JSON.stringify(DEFAULT_RESEARCH));
+  state.research = Array.isArray(rl) ? rl : [];
   const rm=await Store.metaGet('researchMeta');
-  state.researchMeta = (rm && typeof rm==='object' && rm.title) ? rm : JSON.parse(JSON.stringify(DEFAULT_RESEARCH_META));
+  state.researchMeta = (rm && typeof rm==='object' && rm.title) ? rm : {title:'研究中心', sub:''};
   if(!Array.isArray(rl)) await persistResearch();
   buildNav();
   const raw=location.hash.replace('#/','');
