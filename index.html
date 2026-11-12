@@ -499,8 +499,15 @@ body.bar-on .shell{padding-bottom:184px}
 .blk-table tr:last-child td{border-bottom:0}
 .blk-table td:last-child,.blk-table th:last-child{border-right:0}
 /* 圖片區塊 */
-.blk-img{margin:10px 0;line-height:0}
+.blk-img{margin:10px 0;line-height:0;position:relative}
 .blk-img img{max-width:100%;height:auto;display:block;border-radius:12px;background:var(--mist2);box-shadow:0 14px 30px -22px rgba(40,30,110,.6)}
+.blk-img .img-sz{position:relative;display:inline-block;max-width:100%;vertical-align:top}
+.blk-img .img-sz img{width:100%}
+.img-grip{position:absolute;right:8px;bottom:8px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.92);color:var(--lav-deep);border:0;display:grid;place-items:center;box-shadow:0 3px 10px rgba(30,22,70,.28);cursor:nwse-resize;touch-action:none;z-index:3}
+.img-grip svg{width:15px;height:15px}
+.img-grip:active{background:#fff}
+.img-sz-tip{position:absolute;right:8px;bottom:44px;padding:3px 8px;border-radius:8px;background:rgba(26,23,48,.82);color:#fff;font-size:10.5px;line-height:1.5;letter-spacing:.02em;pointer-events:none;opacity:0;transition:opacity .16s}
+.img-sz-tip.on{opacity:1}
 .blk-img .img-meta{display:none}
 /* 相簿區塊 */
 .blk-album{display:grid;gap:6px;margin:10px 0}
@@ -828,7 +835,7 @@ body.blkdrag #edBody{touch-action:none}
           <stop stop-color="#8E7DF2"/><stop offset="1" stop-color="#5A47D6"/>
         </linearGradient></defs>
       </svg>
-      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1 · r21</span></div>
+      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1 · r22</span></div>
       <button class="rail-toggle" id="railToggle" aria-label="收合側欄" title="收合側欄">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 6.5L9 12l5.5 5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
@@ -1125,7 +1132,7 @@ body.blkdrag #edBody{touch-action:none}
 
         <div class="sgroup">
           <h3>關於</h3>
-          <div class="srow"><div class="s-main"><b>Knowledge Space · 原型 V0.1 · r21</b><span>單檔 HTML + IndexedDB，原生 JS</span></div><span class="s-val">2026-11-12</span></div>
+          <div class="srow"><div class="s-main"><b>Knowledge Space · 原型 V0.1 · r22</b><span>單檔 HTML + IndexedDB，原生 JS</span></div><span class="s-val">2026-11-12</span></div>
           <div class="srow"><div class="s-main"><b>正式版技術棧</b><span>React · TypeScript · Vite · Dexie · Orama · XYFlow · OpenCC</span></div><span class="s-val" style="color:var(--ink4)">規劃中</span></div>
         </div>
         <div class="hintline">提醒：iPhone Safari 若長期未開啟，可能回收網站資料。備份是唯一保險，請定期匯出。</div>
@@ -3309,7 +3316,13 @@ function blockHTML(b,i){
   }else if(bt==='img'){
     const src=b.src||'';
     const ratio=(b.w&&b.h) ? ' style="aspect-ratio:'+b.w+'/'+b.h+'"' : '';
-    inner='<div class="blk-img"><img src="'+esc(src)+'" alt="" draggable="false" data-bi="'+i+'" data-bt="img"'+ratio+'></div>';
+    const size=Math.max(25, Math.min(100, Math.round(+b.size||100)));
+    inner='<div class="blk-img"><div class="img-sz" data-sz="'+size+'" style="width:'+size+'%">'+
+      '<img src="'+esc(src)+'" alt="" draggable="false" data-bi="'+i+'" data-bt="img"'+ratio+'>'+
+      '<span class="img-sz-tip">'+size+'%</span>'+
+      '<button class="img-grip" data-grip="'+i+'" aria-label="拖曳調整圖片大小">'+
+        svgIco('<path d="M8 16L16 8M16 8H10M16 8V14" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"/>')+
+      '</button></div></div>';
     tools='';
   }else if(bt==='album'){
     const imgs=b.imgs||[];
@@ -3658,7 +3671,9 @@ function harvest(){
     if(w.querySelector('.blk-img')){
       const img=w.querySelector('.blk-img img');
       const s=(img && img.getAttribute('src'))||src.src||'';
-      if(s) blocks.push({t:'img', src:s, w:src.w||0, h:src.h||0, bytes:src.bytes||0});
+      const sz=w.querySelector('.img-sz');
+      const size=sz ? Math.max(25, Math.min(100, Math.round((parseFloat(sz.style.width)||100)))) : (+src.size||100);
+      if(s) blocks.push({t:'img', src:s, w:src.w||0, h:src.h||0, bytes:src.bytes||0, size:size});
       return;
     }
     if(w.querySelector('.blk-album')){
@@ -3768,6 +3783,44 @@ function openNewNoteSheet(){
 /* =========================================================
    16. 事件綁定
  ========================================================= */
+/* 圖片手動縮放：拖右下角圓點，25–100% */
+(function(){
+  let drag=null;
+  document.addEventListener('pointerdown', function(e){
+    const g=e.target.closest && e.target.closest('.img-grip');
+    if(!g) return;
+    const box=g.closest('.blk-img'); const inner=g.parentNode;
+    if(!box || !inner) return;
+    e.preventDefault(); e.stopPropagation();
+    const contW=box.clientWidth||1;
+    const startPct=Math.max(25, Math.min(100, Math.round(parseFloat(inner.style.width)||100)));
+    drag={g:g, inner:inner, contW:contW, startPct:startPct, sx:e.clientX, pct:startPct, tip:inner.querySelector('.img-sz-tip')};
+    window.__dragEndAt=Date.now();
+    if(drag.tip) drag.tip.classList.add('on');
+  }, {passive:false});
+  document.addEventListener('pointermove', function(e){
+    if(!drag) return;
+    e.preventDefault();
+    const pct=Math.max(25, Math.min(100, Math.round(drag.startPct + (e.clientX-drag.sx)/drag.contW*100)));
+    drag.pct=pct;
+    drag.inner.style.width=pct+'%';
+    if(drag.tip) drag.tip.textContent=pct+'%';
+  }, {passive:false});
+  function endDrag(){
+    if(!drag) return;
+    const g=drag.g, i=+g.dataset.grip, pct=drag.pct, tip=drag.tip;
+    if(tip) tip.classList.remove('on');
+    drag=null;
+    const note=state.currentNote;
+    if(note && note.blocks && note.blocks[i] && note.blocks[i].t==='img') note.blocks[i].size=pct;
+    if(note){ harvest(); flushSave(); }
+    window.__dragEndAt=Date.now();
+    toast('圖片寬度 '+pct+'%');
+  }
+  document.addEventListener('pointerup', endDrag);
+  document.addEventListener('pointercancel', endDrag);
+})();
+
 /* 長按進入複選：資料庫的類型卡／分類列／標籤 chip */
 (function(){
   let timer=null, sx=0, sy=0;
