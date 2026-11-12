@@ -491,6 +491,10 @@ body.bar-on .shell{padding-bottom:184px}
 .blk-table th{background:var(--mist2);font-weight:600;font-size:12px;color:var(--ink2)}
 .blk-table tr:last-child td{border-bottom:0}
 .blk-table td:last-child,.blk-table th:last-child{border-right:0}
+/* 圖片區塊 */
+.blk-img{margin:10px 0;line-height:0}
+.blk-img img{max-width:100%;height:auto;display:block;border-radius:12px;background:var(--mist2);box-shadow:0 14px 30px -22px rgba(40,30,110,.6)}
+.blk-img .img-meta{display:none}
 .bwrap{position:relative}
 .blk-tools{
   position:absolute;top:-13px;right:4px;display:flex;gap:3px;z-index:2;
@@ -780,7 +784,7 @@ body.blkdrag #edBody{touch-action:none}
           <stop stop-color="#8E7DF2"/><stop offset="1" stop-color="#5A47D6"/>
         </linearGradient></defs>
       </svg>
-      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1 · r16</span></div>
+      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1 · r17</span></div>
       <button class="rail-toggle" id="railToggle" aria-label="收合側欄" title="收合側欄">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 6.5L9 12l5.5 5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
@@ -1070,7 +1074,7 @@ body.blkdrag #edBody{touch-action:none}
 
         <div class="sgroup">
           <h3>關於</h3>
-          <div class="srow"><div class="s-main"><b>Knowledge Space · 原型 V0.1 · r16</b><span>單檔 HTML + IndexedDB，原生 JS</span></div><span class="s-val">2026-11-12</span></div>
+          <div class="srow"><div class="s-main"><b>Knowledge Space · 原型 V0.1 · r17</b><span>單檔 HTML + IndexedDB，原生 JS</span></div><span class="s-val">2026-11-12</span></div>
           <div class="srow"><div class="s-main"><b>正式版技術棧</b><span>React · TypeScript · Vite · Dexie · Orama · XYFlow · OpenCC</span></div><span class="s-val" style="color:var(--ink4)">規劃中</span></div>
         </div>
         <div class="hintline">提醒：iPhone Safari 若長期未開啟，可能回收網站資料。備份是唯一保險，請定期匯出。</div>
@@ -1132,10 +1136,12 @@ body.blkdrag #edBody{touch-action:none}
           <button data-add="p"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 7h14M5 12h14M5 17h8" stroke-linecap="round"/></svg>段落</button>
           <button data-add="quote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 8c-2 0-3 1.4-3 3.2 0 1.6 1 2.8 2.4 2.8H8M16 8c-2 0-3 1.4-3 3.2 0 1.6 1 2.8 2.4 2.8h-.4" stroke-linecap="round"/></svg>引用</button>
           <button data-add="table"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M4 10h16M10 10v9"/></svg>表格</button>
+          <button data-add="img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="5" width="16" height="14" rx="2.5"/><circle cx="9" cy="9.6" r="1.6"/><path d="M5.5 17l4.4-4.6 3 3 2.4-2 3.2 3.6" stroke-linecap="round" stroke-linejoin="round"/></svg>圖片</button>
           <button data-add="html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 8l-3 4 3 4M15 8l3 4-3 4" stroke-linecap="round" stroke-linejoin="round"/></svg>HTML</button>
           <button id="btnTpl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 9h16M9 9v11" stroke-linecap="round"/></svg>模板</button>
           <button id="btnReload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 12a8 8 0 1 1-2.4-5.7" stroke-linecap="round"/><path d="M20 4v5h-5" stroke-linecap="round"/></svg>還原</button>
         </div>
+        <input type="file" id="imgPick" accept="image/*" multiple style="display:none">
       </section>
     </main>
 
@@ -1759,6 +1765,7 @@ document.addEventListener('click', function(e){
       dragEl=null;
       document.body.classList.remove('blkdrag');
       document.body.style.touchAction='';
+      window.__dragEndAt=Date.now();
       if(note){ const n=harvest(); renderEd(n); flushSave(); toast('段落順序已更新'); }
     }else clearTimer();
   }
@@ -2773,6 +2780,7 @@ function openSheet(title, body, okLabel, onOk){
   $('#ovlFoot').style.display = okLabel ? 'flex' : 'none';
   $('#ovlOk').textContent=okLabel||'確定';
   $('#ovlOk').classList.remove('danger');
+  if($('#ovlCancel')) $('#ovlCancel').style.display='';
   ovlOkHandler=onOk||null;
   $('#ovl').classList.add('on');
 }
@@ -2935,6 +2943,51 @@ function sanitizeHTML(src){
     .replace(/(href|src)\s*=\s*(["'])\s*javascript:[\s\S]*?\2/gi,'')
     .replace(/javascript:/gi,'');
 }
+/* 圖片插入：前端壓縮（長邊上限 1600，必要時再降尺寸/品質，目標 ≤ 520 KB） */
+async function compressImage(file){
+  const MAX=1600;
+  let bmp=null;
+  try{ bmp=await createImageBitmap(file); }
+  catch(e){
+    bmp=await new Promise(function(res,rej){
+      const im=new Image();
+      im.onload=function(){ res(im); };
+      im.onerror=rej;
+      im.src=URL.createObjectURL(file);
+    });
+  }
+  let w=bmp.width||bmp.naturalWidth||0, h=bmp.height||bmp.naturalHeight||0;
+  if(!w || !h) throw new Error('圖片尺寸讀不到');
+  let scale=Math.min(1, MAX/Math.max(w,h));
+  let quality=0.82;
+  const canvas=document.createElement('canvas');
+  let data='', bytes=0;
+  for(let pass=0; pass<4; pass++){
+    canvas.width=Math.max(1, Math.round(w*scale));
+    canvas.height=Math.max(1, Math.round(h*scale));
+    const ctx=canvas.getContext('2d');
+    ctx.fillStyle='#FFFFFF';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(bmp,0,0,canvas.width,canvas.height);
+    data=canvas.toDataURL('image/jpeg',quality);
+    bytes=Math.round((data.length-(data.indexOf(',')+1))*0.75);
+    if(bytes<=520*1024) break;
+    scale*=0.8; quality=Math.max(0.5, quality-0.08);
+  }
+  return {src:data, w:canvas.width, h:canvas.height, bytes:bytes};
+}
+function insertImages(blocks){
+  const note=state.currentNote; if(!note || !blocks.length) return;
+  harvest();
+  note.blocks=(note.blocks||[]).concat(blocks);
+  renderEd(note);
+  flushSave();
+  const kb=Math.round(blocks.reduce(function(a,b){ return a+(b.bytes||0); },0)/1024);
+  toast((backend==='idb'?'已插入 ':'已插入（相容模式，容量有限）')+blocks.length+' 張圖片 · 合計約 '+kb+' KB');
+  const total=(note.blocks||[]).reduce(function(a,b){ return a+(b.t==='img'?(b.bytes||0):0); },0);
+  if(total>5*1024*1024) toast('這篇圖片已約 '+Math.round(total/1024/1024)+' MB，建議匯出備份或刪掉少用的圖');
+}
+
 function blockHTML(b,i){
   const bt=b.t||'p';
   let inner='', tools='';
@@ -2950,6 +3003,11 @@ function blockHTML(b,i){
       }).join('')+'</tr>';
     }).join('')+'</table></div>';
     tools='<button data-addrow="'+i+'">＋ 一列</button>';
+  }else if(bt==='img'){
+    const src=b.src||'';
+    const ratio=(b.w&&b.h) ? ' style="aspect-ratio:'+b.w+'/'+b.h+'"' : '';
+    inner='<div class="blk-img"><img src="'+esc(src)+'" alt="" draggable="false" data-bi="'+i+'" data-bt="img"'+ratio+'></div>';
+    tools='';
   }else if(bt==='html'){
     if(state.htmlEdit===i){
       inner='<div class="html-tag">HTML 原始碼</div><textarea class="html-src" data-bi="'+i+'" data-bt="html" data-hsrc="'+i+'" spellcheck="false">'+esc(b.html||'')+'</textarea>';
@@ -3283,6 +3341,12 @@ function harvest(){
       if(rows.length) blocks.push({t:'table', rows:rows});
       return;
     }
+    if(w.querySelector('.blk-img')){
+      const img=w.querySelector('.blk-img img');
+      const s=(img && img.getAttribute('src'))||src.src||'';
+      if(s) blocks.push({t:'img', src:s, w:src.w||0, h:src.h||0, bytes:src.bytes||0});
+      return;
+    }
       const el=w.querySelector('[data-bi]');
     const bt=(el && el.dataset.bt) || src.t || 'p';
     if(bt==='html'){
@@ -3303,6 +3367,7 @@ function isBlankBlock(b){
   if(!b) return true;
   if(b.t==='table') return !(b.rows||[]).some(function(r){ return (r||[]).some(function(c){ return String(c||'').trim(); }); });
   if(b.t==='html') return !String(b.html||'').trim();
+  if(b.t==='img') return !String(b.src||'').trim();
   return !String(b.text||'').trim();
 }
 function pruneBlankBlocks(note){
@@ -3688,6 +3753,7 @@ $$('.ed-bar [data-add]').forEach(function(b){
     if(!state.currentNote) return;
     harvest();
     const t=b.dataset.add;
+    if(t==='img'){ $('#imgPick').click(); return; }
     if(t==='table') state.currentNote.blocks.push({t:'table', rows:[['藥物','用量','作用'],['','','']]});
     else if(t==='html') state.currentNote.blocks.push({t:'html', html:'<p><strong>小標：</strong>內容</p>'});
     else state.currentNote.blocks.push({t:t, text:''});
@@ -3699,6 +3765,34 @@ $$('.ed-bar [data-add]').forEach(function(b){
   });
 });
 $('#btnTpl').addEventListener('click', function(){ openTplSheet(); });
+$('#edBody').addEventListener('click', function(e){
+  const im=e.target.closest ? e.target.closest('.blk-img img') : null;
+  if(!im) return;
+  if(Date.now()-(window.__dragEndAt||0)<350) return;
+  const src=im.getAttribute('src')||'';
+  if(!src) return;
+  openSheet('圖片預覽', '<img src="'+esc(src)+'" alt="" style="width:100%;border-radius:12px;display:block;background:var(--mist2)">'+
+    '<div class="ovl-note">原始尺寸 '+im.naturalWidth+' × '+im.naturalHeight+' · 已在本機壓縮儲存</div>', '關閉');
+  const cancelBtn=$('#ovlCancel'); if(cancelBtn) cancelBtn.style.display='none';
+});
+$('#imgPick').addEventListener('change', async function(ev){
+  const files=Array.from(ev.target.files||[]);
+  ev.target.value='';
+  const pics=files.filter(function(f){ return /^image\//.test(f.type); });
+  if(!pics.length){ if(files.length) toast('只支援圖片檔'); return; }
+  if(!state.currentNote) return;
+  toast('壓縮圖片中…');
+  const made=[];
+  for(let k=0;k<pics.length;k++){
+    try{
+      const r=await compressImage(pics[k]);
+      made.push({t:'img', src:r.src, w:r.w, h:r.h, bytes:r.bytes});
+    }catch(err){
+      toast('這張圖片無法處理：'+(pics[k].name||''));
+    }
+  }
+  insertImages(made);
+});
 $('#ovlX').addEventListener('click', closeSheet);
 $('#ovlCancel').addEventListener('click', closeSheet);
 $('#ovl').addEventListener('click', function(e){ if(e.target===$('#ovl')) closeSheet(); });
