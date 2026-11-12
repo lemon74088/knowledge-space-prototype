@@ -549,6 +549,18 @@ body.bar-on .shell{padding-bottom:184px}
 .media-menu button.danger{color:var(--danger)}
 .blk-tools button{font-size:10.5px;color:var(--ink3);padding:2px 8px;border-radius:6px;background:#fff;border:1px solid var(--line);box-shadow:0 3px 10px -6px rgba(40,30,110,.4)}
 .blk-tools button:hover{color:var(--lav-deep);background:var(--mist)}
+/* 手機：區塊工具改成一顆 ⋯，不壓住輸入文字 */
+.blk-more{
+  display:none;position:absolute;top:1px;right:-6px;z-index:2;width:26px;height:26px;border-radius:50%;
+  border:1px solid var(--line);background:rgba(255,255,255,.92);color:var(--ink3);font-size:13px;line-height:1;
+  align-items:center;justify-content:center;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .16s;
+  box-shadow:0 3px 10px -6px rgba(40,30,110,.4)
+}
+.bwrap:focus-within .blk-more,.bwrap:hover .blk-more{opacity:1;pointer-events:auto}
+@media (max-width:767px){
+  .blk-tools{display:none}
+  .blk-more{display:flex}
+}
 /* 文字陰影（每區塊可切換） */
 .blk.sh{text-shadow:0 1px 0 rgba(255,255,255,.9),0 6px 16px rgba(72,50,150,.20)}
 .blk.blk-quote.sh{text-shadow:0 1px 0 rgba(255,255,255,.95),0 9px 24px rgba(72,50,150,.28)}
@@ -837,7 +849,7 @@ body.blkdrag #edBody{touch-action:none}
           <stop stop-color="#8E7DF2"/><stop offset="1" stop-color="#5A47D6"/>
         </linearGradient></defs>
       </svg>
-      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1 · r25</span></div>
+      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1 · r26</span></div>
       <button class="rail-toggle" id="railToggle" aria-label="收合側欄" title="收合側欄">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 6.5L9 12l5.5 5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
@@ -1134,7 +1146,7 @@ body.blkdrag #edBody{touch-action:none}
 
         <div class="sgroup">
           <h3>關於</h3>
-          <div class="srow"><div class="s-main"><b>Knowledge Space · 原型 V0.1 · r25</b><span>單檔 HTML + IndexedDB，原生 JS</span></div><span class="s-val">2026-11-12</span></div>
+          <div class="srow"><div class="s-main"><b>Knowledge Space · 原型 V0.1 · r26</b><span>單檔 HTML + IndexedDB，原生 JS</span></div><span class="s-val">2026-11-12</span></div>
           <div class="srow"><div class="s-main"><b>正式版技術棧</b><span>React · TypeScript · Vite · Dexie · Orama · XYFlow · OpenCC</span></div><span class="s-val" style="color:var(--ink4)">規劃中</span></div>
         </div>
         <div class="hintline">提醒：iPhone Safari 若長期未開啟，可能回收網站資料。備份是唯一保險，請定期匯出。</div>
@@ -1855,6 +1867,8 @@ document.addEventListener('click', function(e){
   }
   bodyEl.addEventListener('pointerdown', function(e){
     if(e.pointerType==='mouse' && e.button!==0) return;
+    /* 手指長按文字＝系統選字／複製，不接管成長按拖曳；要調順序用段落 ⋯ 的上移／下移 */
+    if(e.pointerType!=='mouse' && e.target.closest && e.target.closest('[contenteditable]')) return;
     const w=e.target.closest ? e.target.closest('.bwrap') : null;
     if(!w) return;
     if(e.target.closest('.blk-tools')||e.target.closest('.html-src')||e.target.closest('.blk-table')) return;
@@ -1874,6 +1888,12 @@ document.addEventListener('click', function(e){
   bodyEl.addEventListener('pointermove', function(e){
     if(!active && timer && (Math.abs(e.clientY-sy)>8 || Math.abs(e.clientX-sx)>8)) clearTimer();
   }, {passive:true});
+  /* 一旦選字範圍出現，就取消待啟動的長按拖曳 */
+  document.addEventListener('selectionchange', function(){
+    if(!active && timer){
+      try{ const s=getSelection(); if(s && !s.isCollapsed && String(s).trim()) clearTimer(); }catch(err){}
+    }
+  });
 })();
 
 document.addEventListener('click', async function(e){
@@ -3236,21 +3256,7 @@ function runMediaAct(act, i){
   if(act==='cols'){ albumCycle(i); return; }
   if(act==='unalbum'){ albumSplit(i); return; }
   if(act==='save'){ harvest(); saveBlockAsTemplate(i); return; }
-  if(act==='ins'){
-    closeSheet(); harvest();
-    note.blocks.splice(i+1,0,{t:'p',text:'',html:null,shadow:false});
-    renderEd(note);
-    const nel=$('#bw-'+(i+1)) ? $('#bw-'+(i+1)).querySelector('[contenteditable][data-bt]') : null;
-    if(nel){
-      nel.focus();
-      try{
-        const r=document.createRange(); r.setStart(nel,0); r.collapse(true);
-        const s=getSelection(); s.removeAllRanges(); s.addRange(r);
-      }catch(err){}
-    }
-    flushSave(); toast('已新增段落');
-    return;
-  }
+  if(act==='ins'){ closeSheet(); insertParagraphAfter(i); return; }
   if(act==='del'){
     harvest();
     note.blocks.splice(i,1); state.htmlEdit=null;
@@ -3421,10 +3427,65 @@ function blockHTML(b,i){
     tools='<button data-shadow="'+i+'">'+(b.shadow?'去陰影':'陰影')+'</button>';
   }
   return '<div class="bwrap'+(bt==='img'||bt==='album'?' bwrap-media':'')+'" id="bw-'+i+'">'+inner+
-    ((bt==='img'||bt==='album') ? '<button class="media-btn" data-media="'+i+'" aria-label="圖片操作">⋯</button>' : '')+
+    ((bt==='img'||bt==='album') ? '<button class="media-btn" data-media="'+i+'" aria-label="圖片操作">⋯</button>' : '<button class="blk-more" data-bmore="'+i+'" aria-label="段落操作">⋯</button>')+
     '<div class="blk-tools">'+tools+
       ((bt==='img'||bt==='album')?'':'<button data-ins="'+i+'">＋ 段落</button>')+
       '<button data-savetpl="'+i+'">存模板</button><button data-del="'+i+'">刪除</button></div></div>';
+}
+function insertParagraphAfter(i){
+  const note=state.currentNote; if(!note) return;
+  harvest();
+  const idx=Math.min(note.blocks.length, i+1);
+  note.blocks.splice(idx,0,{t:'p',text:'',html:null,shadow:false});
+  renderEd(note);
+  const nel=$('#bw-'+idx) ? $('#bw-'+idx).querySelector('[contenteditable][data-bt]') : null;
+  if(nel){
+    nel.focus();
+    try{
+      const r=document.createRange(); r.setStart(nel,0); r.collapse(true);
+      const s=getSelection(); s.removeAllRanges(); s.addRange(r);
+    }catch(err){}
+    const wrap=$('#bw-'+idx);
+    if(wrap) wrap.scrollIntoView({behavior:'smooth',block:'center'});
+  }
+  flushSave();
+  toast('已新增段落');
+}
+function openBlockSheet(i){
+  const note=state.currentNote; if(!note) return;
+  const b=note.blocks[i]; if(!b) return;
+  const bt=b.t||'p';
+  let items=[];
+  if(bt==='table'){
+    items=[['addrow','＋ 一列','在表格底部加一列'],['up','上移',''],['down','下移',''],['del','刪除整張表格','']];
+  }else if(bt==='html'){
+    items=[['hedit', state.htmlEdit===i?'完成原始碼編輯':'編輯 HTML 原始碼',''],['up','上移',''],['down','下移',''],['del','刪除','']];
+  }else{
+    items=[['ins','在下方新增段落','同段下方插入空白段落'],
+      ['up','上移',''],['down','下移',''],
+      ['shadow', b.shadow?'關閉文字陰影':'加上文字陰影',''],
+      ['tpl','存為模板','整段存進模板'],
+      ['del','刪除這個段落','']];
+  }
+  openSheet('段落操作',
+    '<div class="media-menu">'+items.map(function(it){
+      return '<button type="button" data-bact="'+it[0]+'" data-bi="'+i+'"'+(it[0]==='del'?' class="danger"':'')+'>'+
+        '<span>'+esc(it[1])+'</span><span style="margin-left:auto;color:var(--ink4);font-size:11.5px">'+esc(it[2]||'')+'</span></button>';
+    }).join('')+'</div>', null);
+  ovlOkHandler=null;
+  const cancelBtn=$('#ovlCancel'); if(cancelBtn) cancelBtn.style.display='none';
+}
+function runBlockAct(act,i){
+  const note=state.currentNote; if(!note) return;
+  const b=note.blocks[i]; if(!b) return;
+  if(act==='ins'){ closeSheet(); insertParagraphAfter(i); return; }
+  if(act==='up'){ closeSheet(); if(i<=0){ toast('已經在最上面'); return; } harvest(); const t=note.blocks[i-1]; note.blocks[i-1]=note.blocks[i]; note.blocks[i]=t; renderEd(note); flushSave(); toast('已上移'); return; }
+  if(act==='down'){ closeSheet(); if(i>=note.blocks.length-1){ toast('已經在最下面'); return; } harvest(); const t=note.blocks[i+1]; note.blocks[i+1]=note.blocks[i]; note.blocks[i]=t; renderEd(note); flushSave(); toast('已下移'); return; }
+  if(act==='shadow'){ closeSheet(); harvest(); note.blocks[i].shadow=!note.blocks[i].shadow; renderEd(note); flushSave(); return; }
+  if(act==='tpl'){ closeSheet(); harvest(); saveBlockAsTemplate(i); return; }
+  if(act==='addrow'){ closeSheet(); harvest(); const cols=(b.rows&&b.rows[0]?b.rows[0].length:3); b.rows.push(new Array(cols).fill('')); renderEd(note); flushSave(); return; }
+  if(act==='hedit'){ closeSheet(); harvest(); state.htmlEdit = (state.htmlEdit===i)?null:i; renderEd(note); if(state.htmlEdit===null) flushSave(); return; }
+  if(act==='del'){ closeSheet(); harvest(); note.blocks.splice(i,1); state.htmlEdit=null; renderEd(note); flushSave(); toast('已刪除'); return; }
 }
 function renderEd(note){
   state.currentNote=note;
@@ -4136,28 +4197,9 @@ document.addEventListener('click', async function(e){
   const mbtn=e.target.closest('[data-media]');
   if(mbtn){ e.stopPropagation(); openMediaMenu(+mbtn.dataset.media); return; }
   const ins=e.target.closest('[data-ins]');
-  if(ins){
-    e.stopPropagation();
-    const at=+ins.dataset.ins;
-    const note=state.currentNote; if(!note) return;
-    harvest();
-    const idx=Math.min(note.blocks.length, at+1);
-    note.blocks.splice(idx,0,{t:'p',text:'',html:null,shadow:false});
-    renderEd(note);
-    const nel=$('#bw-'+idx) ? $('#bw-'+idx).querySelector('[contenteditable][data-bt]') : null;
-    if(nel){
-      nel.focus();
-      try{
-        const r=document.createRange(); r.setStart(nel,0); r.collapse(true);
-        const s=getSelection(); s.removeAllRanges(); s.addRange(r);
-      }catch(err){}
-      const wrap=$('#bw-'+idx);
-      if(wrap) wrap.scrollIntoView({behavior:'smooth',block:'center'});
-    }
-    flushSave();
-    toast('已新增段落');
-    return;
-  }
+  if(ins){ e.stopPropagation(); insertParagraphAfter(+ins.dataset.ins); return; }
+  const bmore=e.target.closest('[data-bmore]');
+  if(bmore){ e.stopPropagation(); openBlockSheet(+bmore.dataset.bmore); return; }
   const del=e.target.closest('[data-del]');
   if(del){ e.stopPropagation(); harvest(); const i=+del.dataset.del; state.currentNote.blocks.splice(i,1); state.htmlEdit=null; renderEd(state.currentNote); flushSave(); return; }
   const addrow=e.target.closest('[data-addrow]');
@@ -4366,6 +4408,13 @@ $('#ovlBody').addEventListener('input', function(e){
   if(e.target.id==='cropSize'){ cropLayout(true); }
 });
 $('#ovlBody').addEventListener('click', function(e){
+  const bact=e.target.closest('[data-bact]');
+  if(bact){
+    const act=bact.dataset.bact, i=+bact.dataset.bi;
+    closeSheet();
+    setTimeout(function(){ runBlockAct(act,i); }, 0);
+    return;
+  }
   const mact=e.target.closest('[data-mact]');
   if(mact){
     const act=mact.dataset.mact, i=+mact.dataset.mi;
