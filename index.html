@@ -837,7 +837,7 @@ body.blkdrag #edBody{touch-action:none}
           <stop stop-color="#8E7DF2"/><stop offset="1" stop-color="#5A47D6"/>
         </linearGradient></defs>
       </svg>
-      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1 · r24</span></div>
+      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1 · r25</span></div>
       <button class="rail-toggle" id="railToggle" aria-label="收合側欄" title="收合側欄">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 6.5L9 12l5.5 5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
@@ -1134,7 +1134,7 @@ body.blkdrag #edBody{touch-action:none}
 
         <div class="sgroup">
           <h3>關於</h3>
-          <div class="srow"><div class="s-main"><b>Knowledge Space · 原型 V0.1 · r24</b><span>單檔 HTML + IndexedDB，原生 JS</span></div><span class="s-val">2026-11-12</span></div>
+          <div class="srow"><div class="s-main"><b>Knowledge Space · 原型 V0.1 · r25</b><span>單檔 HTML + IndexedDB，原生 JS</span></div><span class="s-val">2026-11-12</span></div>
           <div class="srow"><div class="s-main"><b>正式版技術棧</b><span>React · TypeScript · Vite · Dexie · Orama · XYFlow · OpenCC</span></div><span class="s-val" style="color:var(--ink4)">規劃中</span></div>
         </div>
         <div class="hintline">提醒：iPhone Safari 若長期未開啟，可能回收網站資料。備份是唯一保險，請定期匯出。</div>
@@ -2496,15 +2496,22 @@ function fgDrawNode(n, ctx, globalScale){
     ctx.lineWidth=1.8; ctx.strokeStyle='rgba(57,131,106,.68)'; ctx.stroke();
   }
   if(n.kind!=='note'){
-    const fs=Math.max(3, 10.5/globalScale);
+    const fs=Math.max(3, (n.kind==='center'?9.5:10.5)/globalScale);
     const show=n.name.length>8? n.name.slice(0,8)+'…' : n.name;
     ctx.font=(n.kind==='center'?'700 ':'600 ')+fs+'px system-ui,-apple-system,sans-serif';
     ctx.textAlign='center'; ctx.textBaseline='middle';
+    const ly=n.y-(r+fs*0.78), cy2=n.y+(r+fs*0.82);
+    /* 白色描邊當底，標籤壓到連線時仍讀得清 */
+    ctx.lineWidth=2.6; ctx.strokeStyle='rgba(255,255,255,.92)';
+    ctx.strokeText(show, n.x, ly);
     ctx.fillStyle= n.kind==='center'? '#2E6B52' : '#8A6D1C';
-    ctx.fillText(show, n.x, n.y-fs*0.34);
-    ctx.font=(fs*0.84)+'px system-ui,-apple-system,sans-serif';
+    ctx.fillText(show, n.x, ly);
+    const small=(fs*0.84)+'px system-ui,-apple-system,sans-serif';
+    ctx.font=small;
+    ctx.lineWidth=2.2;
+    ctx.strokeText(n.count+' 筆', n.x, cy2);
     ctx.fillStyle='rgba(122,113,152,.92)';
-    ctx.fillText(n.count+' 筆', n.x, n.y+fs*0.62);
+    ctx.fillText(n.count+' 筆', n.x, cy2);
   }
 }
 function fgAreaPaint(n, color, ctx){
@@ -2517,7 +2524,7 @@ function renderForceGraph(box, notes){
   const H=Math.max(430, Math.min(560, Math.round(window.innerHeight*0.62)));
   box.innerHTML='<div id="fgMount" style="height:'+H+'px"></div>'+
     '<div class="gnote" id="gNote">'+gnoteMarkup()+'</div>'+
-    '<div class="hintline">力導向圖譜（開源引擎 force-graph）：拖曳節點可搬移 · 滾輪縮放 · 拖曳空白處平移 · 紫色虛線流動是已建立關聯 · 點小點看內容。</div>';
+    '<div class="hintline">由研究中心向外展開：分類在中圈、每筆資料在外圈。拖曳節點可搬移 · 滾輪縮放 · 拖曳空白處平移；紫色虛線流動是已建立關聯，點小點看內容。</div>';
   const mount=$('#fgMount');
   const groups={};
   notes.forEach(function(x){ const k=x.category||'未分類'; (groups[k]=groups[k]||[]).push(x); });
@@ -2551,6 +2558,34 @@ function renderForceGraph(box, notes){
     });
   });
   if(fgInstance){ try{ fgInstance._destructor(); }catch(e){} fgInstance=null; }
+  /* 由中心向外輻射：分類在中圈、筆記在外圈，位置一次算定並固定，不再亂飄擠成一團 */
+  const W=Math.max(320, mount.clientWidth||360);
+  const cx=W/2, cy=H/2;
+  const Rc=Math.min(W,H)*0.26;
+  const total=notes.length||1;
+  let ang=-Math.PI/2;
+  const sec=2*Math.PI/Math.max(1,ks.length);
+  ks.forEach(function(k){
+    const items=groups[k];
+    const span=sec*0.96;
+    const mid=ang+span/2;
+    const hub=nodes.find(function(n){ return n.id==='__cat__'+k; });
+    if(hub){
+      hub.x=cx+Math.cos(mid)*Rc; hub.y=cy+Math.sin(mid)*Rc;
+      hub.fx=hub.x; hub.fy=hub.y;
+    }
+    const two=items.length>6;
+    items.forEach(function(o,j){
+      const n=byId[o.id]; if(!n) return;
+      const t=items.length===1?0.5:(j/(items.length-1));
+      const a=ang+span*(0.10+0.80*t);
+      const ring=Rc+(two? (j%2? 74:48) : 58);
+      n.x=cx+Math.cos(a)*ring; n.y=cy+Math.sin(a)*ring;
+      n.fx=n.x; n.fy=n.y;
+    });
+    ang+=span;
+  });
+  center.x=cx; center.y=cy; center.fx=cx; center.fy=cy;
   const fg=ForceGraph()(mount)
     .graphData({nodes:nodes, links:links})
     .nodeId('id')
@@ -2570,7 +2605,7 @@ function renderForceGraph(box, notes){
       if(n.kind==='note'){ state.gSel=n.id; const g=$('#gNote'); if(g) g.innerHTML=gnoteMarkup(); }
       else if(n.kind==='cat'){ fg.centerAt(n.x, n.y, 500); fg.zoom(1.5, 500); }
     })
-    .onNodeDragEnd(function(n){ if(n.kind==='center'){ n.fx=n.x; n.fy=n.y; } })
+    .onNodeDragEnd(function(n){ n.fx=n.x; n.fy=n.y; })
     .width(mount.clientWidth||360)
     .height(H)
     .cooldownTime(1600);
@@ -2578,7 +2613,7 @@ function renderForceGraph(box, notes){
   const lf=fg.d3Force('link'); if(lf) lf.distance(function(l){ return l.rel?38:52; });
   fgInstance=fg;
   window.__fg=fg; /* 供偵錯與測試使用 */
-  setTimeout(function(){ try{ fg.zoomToFit(700, 26); }catch(e){} }, 1700);
+  setTimeout(function(){ try{ fg.zoomToFit(500, 34); }catch(e){} }, 420);
 }
 function renderGraph(){
   $$('.gtabs button').forEach(b=> b.classList.toggle('on', b.dataset.g===state.graphMode));
