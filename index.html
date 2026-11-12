@@ -530,6 +530,8 @@ body.bar-on .shell{padding-bottom:184px}
   opacity:0;transition:opacity .16s;pointer-events:none
 }
 .bwrap:hover .blk-tools,.bwrap:focus-within .blk-tools{opacity:1;pointer-events:auto}
+/* 空白區塊：工具列收進格內垂直居中，避免壓到上一段文字 */
+.bwrap:has(> .blk:empty) .blk-tools{top:50%;transform:translateY(-50%);right:6px}
 /* 圖片／相簿：右上角操作鈕（常駐，手機可點） */
 .bwrap-media .blk-tools{display:none}
 .media-btn{
@@ -835,7 +837,7 @@ body.blkdrag #edBody{touch-action:none}
           <stop stop-color="#8E7DF2"/><stop offset="1" stop-color="#5A47D6"/>
         </linearGradient></defs>
       </svg>
-      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1 · r23</span></div>
+      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1 · r24</span></div>
       <button class="rail-toggle" id="railToggle" aria-label="收合側欄" title="收合側欄">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 6.5L9 12l5.5 5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
@@ -1132,7 +1134,7 @@ body.blkdrag #edBody{touch-action:none}
 
         <div class="sgroup">
           <h3>關於</h3>
-          <div class="srow"><div class="s-main"><b>Knowledge Space · 原型 V0.1 · r23</b><span>單檔 HTML + IndexedDB，原生 JS</span></div><span class="s-val">2026-11-12</span></div>
+          <div class="srow"><div class="s-main"><b>Knowledge Space · 原型 V0.1 · r24</b><span>單檔 HTML + IndexedDB，原生 JS</span></div><span class="s-val">2026-11-12</span></div>
           <div class="srow"><div class="s-main"><b>正式版技術棧</b><span>React · TypeScript · Vite · Dexie · Orama · XYFlow · OpenCC</span></div><span class="s-val" style="color:var(--ink4)">規劃中</span></div>
         </div>
         <div class="hintline">提醒：iPhone Safari 若長期未開啟，可能回收網站資料。備份是唯一保險，請定期匯出。</div>
@@ -3155,12 +3157,14 @@ function openMediaMenu(i){
     ['unalbum','拆回單張圖片','每張回到獨立區塊'],
     ['replace','替換其中一張','換掉相簿裡的第一張'],
     ['save','存為模板','整組相簿存進模板'],
+    ['ins','在下方新增段落',''],
     ['del','刪除整個相簿','']
   ] : [
     ['replace','替換圖片','保留位置，直接換內容'],
     ['crop','裁切','按比例裁切並重新壓縮'],
     ['album','合併成相簿','與上下相鄰圖片併成格子'],
     ['save','存為模板','單張圖片存進模板'],
+    ['ins','在下方新增段落',''],
     ['del','刪除圖片','']
   ];
   openSheet(isAlbum?'相簿操作':'圖片操作',
@@ -3197,6 +3201,21 @@ function runMediaAct(act, i){
   if(act==='cols'){ albumCycle(i); return; }
   if(act==='unalbum'){ albumSplit(i); return; }
   if(act==='save'){ harvest(); saveBlockAsTemplate(i); return; }
+  if(act==='ins'){
+    closeSheet(); harvest();
+    note.blocks.splice(i+1,0,{t:'p',text:'',html:null,shadow:false});
+    renderEd(note);
+    const nel=$('#bw-'+(i+1)) ? $('#bw-'+(i+1)).querySelector('[contenteditable][data-bt]') : null;
+    if(nel){
+      nel.focus();
+      try{
+        const r=document.createRange(); r.setStart(nel,0); r.collapse(true);
+        const s=getSelection(); s.removeAllRanges(); s.addRange(r);
+      }catch(err){}
+    }
+    flushSave(); toast('已新增段落');
+    return;
+  }
   if(act==='del'){
     harvest();
     note.blocks.splice(i,1); state.htmlEdit=null;
@@ -3368,7 +3387,9 @@ function blockHTML(b,i){
   }
   return '<div class="bwrap'+(bt==='img'||bt==='album'?' bwrap-media':'')+'" id="bw-'+i+'">'+inner+
     ((bt==='img'||bt==='album') ? '<button class="media-btn" data-media="'+i+'" aria-label="圖片操作">⋯</button>' : '')+
-    '<div class="blk-tools">'+tools+'<button data-savetpl="'+i+'">存模板</button><button data-del="'+i+'">刪除</button></div></div>';
+    '<div class="blk-tools">'+tools+
+      ((bt==='img'||bt==='album')?'':'<button data-ins="'+i+'">＋ 段落</button>')+
+      '<button data-savetpl="'+i+'">存模板</button><button data-del="'+i+'">刪除</button></div></div>';
 }
 function renderEd(note){
   state.currentNote=note;
@@ -4079,6 +4100,29 @@ document.addEventListener('click', async function(e){
   }
   const mbtn=e.target.closest('[data-media]');
   if(mbtn){ e.stopPropagation(); openMediaMenu(+mbtn.dataset.media); return; }
+  const ins=e.target.closest('[data-ins]');
+  if(ins){
+    e.stopPropagation();
+    const at=+ins.dataset.ins;
+    const note=state.currentNote; if(!note) return;
+    harvest();
+    const idx=Math.min(note.blocks.length, at+1);
+    note.blocks.splice(idx,0,{t:'p',text:'',html:null,shadow:false});
+    renderEd(note);
+    const nel=$('#bw-'+idx) ? $('#bw-'+idx).querySelector('[contenteditable][data-bt]') : null;
+    if(nel){
+      nel.focus();
+      try{
+        const r=document.createRange(); r.setStart(nel,0); r.collapse(true);
+        const s=getSelection(); s.removeAllRanges(); s.addRange(r);
+      }catch(err){}
+      const wrap=$('#bw-'+idx);
+      if(wrap) wrap.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+    flushSave();
+    toast('已新增段落');
+    return;
+  }
   const del=e.target.closest('[data-del]');
   if(del){ e.stopPropagation(); harvest(); const i=+del.dataset.del; state.currentNote.blocks.splice(i,1); state.htmlEdit=null; renderEd(state.currentNote); flushSave(); return; }
   const addrow=e.target.closest('[data-addrow]');
