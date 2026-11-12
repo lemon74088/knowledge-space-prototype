@@ -828,7 +828,7 @@ body.blkdrag #edBody{touch-action:none}
           <stop stop-color="#8E7DF2"/><stop offset="1" stop-color="#5A47D6"/>
         </linearGradient></defs>
       </svg>
-      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1 · r20</span></div>
+      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1 · r21</span></div>
       <button class="rail-toggle" id="railToggle" aria-label="收合側欄" title="收合側欄">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 6.5L9 12l5.5 5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
@@ -1125,7 +1125,7 @@ body.blkdrag #edBody{touch-action:none}
 
         <div class="sgroup">
           <h3>關於</h3>
-          <div class="srow"><div class="s-main"><b>Knowledge Space · 原型 V0.1 · r20</b><span>單檔 HTML + IndexedDB，原生 JS</span></div><span class="s-val">2026-11-12</span></div>
+          <div class="srow"><div class="s-main"><b>Knowledge Space · 原型 V0.1 · r21</b><span>單檔 HTML + IndexedDB，原生 JS</span></div><span class="s-val">2026-11-12</span></div>
           <div class="srow"><div class="s-main"><b>正式版技術棧</b><span>React · TypeScript · Vite · Dexie · Orama · XYFlow · OpenCC</span></div><span class="s-val" style="color:var(--ink4)">規劃中</span></div>
         </div>
         <div class="hintline">提醒：iPhone Safari 若長期未開啟，可能回收網站資料。備份是唯一保險，請定期匯出。</div>
@@ -1312,6 +1312,12 @@ const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
 const pad = n => (n<10?'0':'')+n;
 const fmtDate = ts => { const d=new Date(ts); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); };
 const fmtMD = ts => { const d=new Date(ts); return (d.getMonth()+1)+'月'+d.getDate()+'日'; };
+const fmtAdd = ts => {
+  if(!ts) return '未記錄';
+  const d=new Date(ts), now=new Date();
+  const y = d.getFullYear()===now.getFullYear() ? '' : (d.getFullYear()+'/');
+  return '加入 '+y+(d.getMonth()+1)+'/'+d.getDate();
+};
 const fmtRel = ts => {
   const diff=Date.now()-ts, day=86400000;
   if(diff<60000) return '剛剛';
@@ -1922,7 +1928,7 @@ function rowHTML(note, extra, sel){
     '<span class="row-ico ico-'+c+'">'+(TYPE_ICON[note.type]||'記')+'</span>'+
     '<span class="row-main"><b>'+esc(note.title||'未命名筆記')+'</b>'+
       '<span><span class="badge b-'+c+'">'+note.type+'</span><i></i>'+esc(note.category||'未分類')+
-      '<i></i>'+(extra||fmtRel(note.updatedAt))+'</span>'+
+      '<i></i>'+(extra||fmtAdd(note.createdAt))+'</span>'+
       ((note.tags&&note.tags.length)?'<span class="row-tags">'+note.tags.slice(0,4).map(function(t){ return '#'+esc(t); }).join(' ')+((note.tags.length>4)?' +'+(note.tags.length-4):'')+'</span>':'')+
     '</span>'+
     end+
@@ -1955,7 +1961,7 @@ function cardHTML(note, sel){
       '</span>'+
       '<span class="lc-body">'+
         '<span class="lc-title">'+esc(note.title||'未命名筆記')+'</span>'+
-        '<span class="lc-meta">'+esc(note.category||'未分類')+' · '+fmtRel(note.updatedAt)+'</span>'+
+        '<span class="lc-meta">'+esc(note.category||'未分類')+' · '+fmtAdd(note.createdAt)+'</span>'+
         tags+
       '</span>'+
     '</button></div>';
@@ -2276,7 +2282,7 @@ function compactHTML(note, sel){
       '<span class="cdot" style="background:'+c+'"></span>'+
       '<span class="ctitle">'+esc(note.title||'未命名筆記')+'</span>'+
       '<span class="cfav"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2" width="13" height="13"><path d="M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.2-4.1 5.8-.8L12 3.6" stroke-linejoin="round"/></svg></span>'+
-      '<span class="cmeta">'+esc(note.type)+' · '+fmtRel(note.updatedAt)+'</span>'+
+      '<span class="cmeta">'+esc(note.type)+' · '+fmtAdd(note.createdAt)+'</span>'+
       selbox+
     '</button></div>';
 }
@@ -3351,7 +3357,7 @@ function renderEd(note){
   $('#edBack').setAttribute('aria-label','返回'+backLabel);
   $('#edBody').innerHTML=(note.blocks||[]).map((b,i)=>blockHTML(b,i)).join('') ||
     '<p style="color:var(--ink3);font-size:12.5px">空白筆記，用下方工具列加入第一個區塊。</p>';
-  $('#edTime').textContent='更新 '+fmtRel(note.updatedAt);
+  $('#edTime').textContent='加入 '+fmtAdd(note.createdAt).replace('加入 ','')+' · 更新 '+fmtRel(note.updatedAt);
   $('#edWords').textContent=textOf(note).replace(/\s/g,'').length+' 字';
   $('#btnFav').style.color = note.favorite ? '#C9A227' : '';
   $('#edSave').textContent='已儲存';
@@ -3705,7 +3711,7 @@ async function flushSave(){
   const i=state.notes.findIndex(n=>n.id===note.id);
   if(i>=0) state.notes[i]=JSON.parse(JSON.stringify(note));
   $('#edSave').textContent='已儲存'; $('#edSave').style.color='var(--jade)';
-  $('#edTime').textContent='更新 '+fmtRel(note.updatedAt);
+  $('#edTime').textContent='加入 '+fmtAdd(note.createdAt).replace('加入 ','')+' · 更新 '+fmtRel(note.updatedAt);
   $('#edWords').textContent=textOf(note).replace(/\s/g,'').length+' 字';
 }
 async function loadNote(id){
