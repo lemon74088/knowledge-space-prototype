@@ -372,12 +372,12 @@ a{color:var(--lav-deep);text-decoration:none}
 }
 .res-in:focus{border-color:rgba(103,85,222,.42);background:#fff}
 .res-in-sub{font-size:11.5px;padding:5px 10px;color:var(--ink2)}
-.res-edit{display:flex;gap:8px;align-items:center;padding:11px 14px;border-bottom:1px solid var(--line2);background:#FCFBFE}
+.res-edit{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 8px;align-items:center;padding:11px 14px;border-bottom:1px solid var(--line2);background:#FCFBFE}
 .res-edit:last-of-type{border-bottom:0}
-.res-edit-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.res-edit-main{grid-column:1 / -1;min-width:0;display:flex;flex-direction:column;gap:5px}
 .res-sel{
-  flex:0 0 88px;height:34px;border:1px solid var(--line);border-radius:9px;background:#fff;
-  font-size:11.5px;color:var(--ink2);padding:0 6px;outline:0
+  width:100%;min-width:0;height:34px;border:1px solid var(--line);border-radius:9px;background:#fff;
+  font-size:12px;color:var(--ink2);padding:0 8px;outline:0
 }
 .rmini{flex:none;font-size:10.5px;padding:5px 9px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink3);white-space:nowrap}
 .rmini.del:hover{color:#B4462F;border-color:rgba(180,70,47,.35);background:#FFF6F4}
@@ -715,6 +715,12 @@ body.blkdrag #edBody{touch-action:none}
 .lf-chip::after{content:'✕';font-size:9px;opacity:.55;margin-left:2px}
 .lf-chip:hover{background:var(--mist2)}
 .lf-more{flex:none;font-size:10px;color:var(--ink3);font-weight:600;padding-left:1px}
+.lf-multi{display:flex;align-items:center;gap:8px;margin-top:8px;padding:7px 8px 7px 12px;border-radius:12px;background:rgba(103,85,222,.08);border:1px solid rgba(103,85,222,.22)}
+.lf-multi[hidden]{display:none}
+.lf-multi-t{flex:1;min-width:0;font-size:11.5px;font-weight:700;color:var(--lav-deep);display:flex;align-items:baseline;gap:6px}
+.lf-multi-t em{font-style:normal;font-weight:500;font-size:10.5px;color:var(--ink2)}
+.lf-multi-b{flex:none;border:0;border-radius:9px;padding:0 10px;min-height:28px;font-size:11px;font-weight:600;color:var(--lav-deep);background:var(--paper)}
+.lf-multi-b.on{background:var(--lav);color:#fff}
 .lf-none{font-size:11px;color:var(--ink4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lf-arr{flex:none;color:var(--ink4);transition:transform .22s}
 .lf-seg[aria-expanded="true"] .lf-arr{transform:rotate(180deg)}
@@ -822,7 +828,7 @@ body.blkdrag #edBody{touch-action:none}
           <stop stop-color="#8E7DF2"/><stop offset="1" stop-color="#5A47D6"/>
         </linearGradient></defs>
       </svg>
-      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1 · r19</span></div>
+      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1 · r20</span></div>
       <button class="rail-toggle" id="railToggle" aria-label="收合側欄" title="收合側欄">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 6.5L9 12l5.5 5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
@@ -998,12 +1004,17 @@ body.blkdrag #edBody{touch-action:none}
             <svg class="lf-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="13" height="13"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
           </div>
+          <div class="lf-multi" id="lfMulti" hidden>
+            <span class="lf-multi-t">複選模式<em id="lfMultiTxt">已選 0 項</em></span>
+            <button class="lf-multi-b" data-lfmulti="clear">清除</button>
+            <button class="lf-multi-b on" data-lfmulti="done">完成</button>
+          </div>
           <div class="lf-panel" data-lfpanel="type" hidden>
-            <div class="block" style="padding-bottom:0"><div class="block-head"><h2>資料類型<em>可複選 · 再點取消</em></h2></div></div>
+            <div class="block" style="padding-bottom:0"><div class="block-head"><h2>資料類型<em>點擊單選 · 長按進入複選</em></h2></div></div>
             <div class="tcards" id="typeCards"></div></div>
           <div class="lf-panel" data-lfpanel="cat" hidden>
             <div class="block">
-              <div class="block-head"><h2>我的分類<em>可複選 · 依筆數排序</em></h2></div>
+              <div class="block-head"><h2>我的分類<em>點擊單選 · 長按進入複選</em></h2></div>
               <div class="rows" id="catRows"></div>
             </div>
           </div>
@@ -1114,7 +1125,7 @@ body.blkdrag #edBody{touch-action:none}
 
         <div class="sgroup">
           <h3>關於</h3>
-          <div class="srow"><div class="s-main"><b>Knowledge Space · 原型 V0.1 · r19</b><span>單檔 HTML + IndexedDB，原生 JS</span></div><span class="s-val">2026-11-12</span></div>
+          <div class="srow"><div class="s-main"><b>Knowledge Space · 原型 V0.1 · r20</b><span>單檔 HTML + IndexedDB，原生 JS</span></div><span class="s-val">2026-11-12</span></div>
           <div class="srow"><div class="s-main"><b>正式版技術棧</b><span>React · TypeScript · Vite · Dexie · Orama · XYFlow · OpenCC</span></div><span class="s-val" style="color:var(--ink4)">規劃中</span></div>
         </div>
         <div class="hintline">提醒：iPhone Safari 若長期未開啟，可能回收網站資料。備份是唯一保險，請定期匯出。</div>
@@ -1541,7 +1552,7 @@ function SEED(){
    ========================================================= */
 const state={
   notes:[], view:'home', notesFilter:'全部', libFilter:'全部', catFilter:null, tagFilter:null,
-  libTypes:[], libCats:[], libTags:[],
+  libTypes:[], libCats:[], libTags:[], libMulti:false,
   graphMode:'radial', currentNote:null, saveTimer:null, dirty:false,
   searchQ:'', searchType:'全部', idxCache:new Map(), templates:[], htmlEdit:null,
   selMode:false, selView:null, selected:{}, lastDeleted:null, depth:0, noteId:null, types:[]
@@ -2347,13 +2358,21 @@ function renderLibrary(){
       return '<button class="tchip'+((state.libTags||[]).indexOf(x.t)>=0?' on':'')+'" data-tagfilter="'+esc(x.t)+'">#'+esc(x.t)+'<span>'+x.n+'</span></button>';
     }).join('');
   })();
-  $('#tagFilterHint').textContent = (state.libTags||[]).length ? '可再點其他標籤並列' : '可複選，點標籤篩選';
+  $('#tagFilterHint').textContent = state.libMulti ? '複選模式 · 點標籤加選或取消' : ((state.libTags||[]).length ? '點其他標籤會換成單選' : '長按標籤可進入複選');
   const sel=selActive('library');
   $('#btnSelLib').classList.toggle('on', !!sel);
   $('#btnSelLib').setAttribute('aria-pressed', sel?'true':'false');
   const anyFilter=(state.libTypes||[]).length || (state.libCats||[]).length || (state.libTags||[]).length;
+  const mb=$('#lfMulti');
+  if(mb){
+    mb.hidden=!state.libMulti;
+    const mt=$('#lfMultiTxt');
+    if(mt) mt.textContent='已選 '+((state.libTypes||[]).length+(state.libCats||[]).length+(state.libTags||[]).length)+' 項';
+  }
   $('#libListTitle').textContent = anyFilter ? '篩選結果' : '全部資料';
-  $('#libFilterHint').textContent = anyFilter ? (filtered.length+' 筆 · 類型／分類／標籤都可複選') : '點上方卡片與分類即可複選篩選';
+  $('#libFilterHint').textContent = state.libMulti
+    ? '複選模式 · 點項目可加選或取消'
+    : (anyFilter ? (filtered.length+' 筆 · 長按可進入複選') : '點一下篩選 · 長按進入複選');
   /* 依類型分組；顯示模式：卡片格（kittenjam 式）／清單列／精簡列 */
   const lmode=state.libMode||'card';
   const lgroups={};
@@ -2650,6 +2669,17 @@ function renderGraph(){
    13. 研究中心（研究線可自行編輯，存 meta）
  ========================================================= */
 const RES_TYPES=[['中藥','中藥'],['方劑','方劑'],['醫案','醫案'],['文獻','文獻'],['','不計數']];
+/* 關聯下拉改讀目前資料庫的類型（含自訂），並標上筆數；舊資料的類型若已被刪除仍保留選項 */
+function resTypeOptions(cur){
+  const counts=typeCounts();
+  const names=(state.types||[]).map(function(t){ return t.name; });
+  if(cur && names.indexOf(cur)<0) names.push(cur);
+  const opts=names.map(function(n){
+    const c=counts[n]||0;
+    return '<option value="'+esc(n)+'"'+(cur===n?' selected':'')+'>'+esc(n)+'（'+c+' 筆）</option>';
+  }).join('');
+  return '<option value=""'+(!cur?' selected':'')+'>不計數（純研究線）</option>'+opts;
+}
 const DEFAULT_RESEARCH=[
   {id:'r1', title:'中藥研究', sub:'性味、配伍、現代研究', type:'中藥'},
   {id:'r2', title:'方劑研究', sub:'組成、加減、適應證', type:'方劑'},
@@ -2695,9 +2725,7 @@ function renderResearch(){
           '<input class="res-in" data-resi="'+i+'" data-resk="title" value="'+esc(it.title)+'" placeholder="研究線名稱">'+
           '<input class="res-in res-in-sub" data-resi="'+i+'" data-resk="sub" value="'+esc(it.sub||'')+'" placeholder="說明">'+
         '</div>'+
-        '<select class="res-sel" data-resi="'+i+'" data-resk="type">'+
-          RES_TYPES.map(function(p){ return '<option value="'+p[0]+'"'+(it.type===p[0]?' selected':'')+'>'+p[1]+'</option>'; }).join('')+
-        '</select>'+
+        '<select class="res-sel" data-resi="'+i+'" data-resk="type">'+resTypeOptions(it.type||'')+'</select>'+
         '<button class="rmini del" data-resdel="'+i+'">刪除</button>'+
       '</div>';
     }).join('');
@@ -3734,7 +3762,46 @@ function openNewNoteSheet(){
 /* =========================================================
    16. 事件綁定
  ========================================================= */
+/* 長按進入複選：資料庫的類型卡／分類列／標籤 chip */
+(function(){
+  let timer=null, sx=0, sy=0;
+  const clear=function(){ if(timer){ clearTimeout(timer); timer=null; } };
+  const SEL='#typeCards [data-libtype], #catRows [data-cat], #tagWall [data-tagfilter]';
+  document.addEventListener('pointerdown', function(e){
+    if(e.button!==undefined && e.button!==0) return;
+    const vlib=document.getElementById('v-library');
+    if(!vlib || !vlib.classList.contains('on')) return;
+    const el=e.target.closest && e.target.closest(SEL);
+    if(!el) return;
+    sx=e.clientX; sy=e.clientY;
+    clear();
+    timer=setTimeout(function(){
+      timer=null;
+      state.libMulti=true;
+      state._lpSkipUntil=Date.now()+320;
+      renderLibrary();
+      toast('已進入複選模式 · 點項目可多選');
+    },450);
+  }, {passive:true});
+  document.addEventListener('pointermove', function(e){
+    if(!timer) return;
+    if(Math.abs(e.clientX-sx)>10 || Math.abs(e.clientY-sy)>10) clear();
+  }, {passive:true});
+  document.addEventListener('pointerup', clear, {passive:true});
+  document.addEventListener('pointercancel', clear, {passive:true});
+})();
+
 document.addEventListener('click', async function(e){
+  if(Date.now() < (state._lpSkipUntil||0)){ e.preventDefault(); return; }
+  const lfm=e.target.closest('[data-lfmulti]');
+  if(lfm){
+    const act=lfm.dataset.lfmulti;
+    if(act==='clear'){ state.libTypes=[]; state.libCats=[]; state.libTags=[]; }
+    state.libMulti = (act==='clear') ? true : false;
+    renderLibrary();
+    if(act==='done') toast('已結束複選');
+    return;
+  }
   const st=e.target.closest('[data-stype]');
   if(st){ state.searchType=st.dataset.stype; renderSearch(); return; }
   const fs=e.target.closest('[data-fscale]');
@@ -3778,14 +3845,23 @@ document.addEventListener('click', async function(e){
     return;
   }
   const lb=e.target.closest('[data-libtype]');
-  if(lb){ const t=lb.dataset.libtype; const rows=$('#libRows');
+  if(lb){ const t=lb.dataset.libtype;
     const apply=function(){
-      const arr=state.libTypes||(state.libTypes=[]);
-      const i=arr.indexOf(t);
-      if(i>=0) arr.splice(i,1); else arr.push(t);
+      if(state.libMulti){
+        const arr=state.libTypes||(state.libTypes=[]);
+        const i=arr.indexOf(t);
+        if(i>=0) arr.splice(i,1); else arr.push(t);
+      }else{
+        state.libTypes = ((state.libTypes||[]).length===1 && state.libTypes[0]===t) ? [] : [t];
+        state.libCats=[]; state.libTags=[];
+        const pn=document.querySelector('[data-lfpanel="type"]');
+        if(pn && !pn.hasAttribute('hidden')) pn.setAttribute('hidden','');
+        const sb=document.querySelector('[data-lfsec="type"]');
+        if(sb) sb.setAttribute('aria-expanded','false');
+      }
       renderLibrary();
     };
-    flipList(rows, apply);
+    flipList($('#libRows'), apply);
     return; }
   const tagadd=e.target.closest('[data-tagadd]');
   if(tagadd){ openTagSheet(); return; }
@@ -3798,9 +3874,18 @@ document.addEventListener('click', async function(e){
   const tgf=e.target.closest('[data-tagfilter]');
   if(tgf){ const t=tgf.dataset.tagfilter;
     flipList($('#libRows'), function(){
-      const arr=state.libTags||(state.libTags=[]);
-      const i=arr.indexOf(t);
-      if(i>=0) arr.splice(i,1); else arr.push(t);
+      if(state.libMulti){
+        const arr=state.libTags||(state.libTags=[]);
+        const i=arr.indexOf(t);
+        if(i>=0) arr.splice(i,1); else arr.push(t);
+      }else{
+        state.libTags = ((state.libTags||[]).length===1 && state.libTags[0]===t) ? [] : [t];
+        state.libTypes=[]; state.libCats=[];
+        const pn=document.querySelector('[data-lfpanel="tag"]');
+        if(pn && !pn.hasAttribute('hidden')) pn.setAttribute('hidden','');
+        const sb=document.querySelector('[data-lfsec="tag"]');
+        if(sb) sb.setAttribute('aria-expanded','false');
+      }
       renderLibrary();
     });
     return; }
@@ -3812,9 +3897,18 @@ document.addEventListener('click', async function(e){
   if(cat){
     const name=cat.dataset.cat;
     flipList($('#libRows'), function(){
-      const arr=state.libCats||(state.libCats=[]);
-      const i=arr.indexOf(name);
-      if(i>=0) arr.splice(i,1); else arr.push(name);
+      if(state.libMulti){
+        const arr=state.libCats||(state.libCats=[]);
+        const i=arr.indexOf(name);
+        if(i>=0) arr.splice(i,1); else arr.push(name);
+      }else{
+        state.libCats = ((state.libCats||[]).length===1 && state.libCats[0]===name) ? [] : [name];
+        state.libTypes=[]; state.libTags=[];
+        const pn=document.querySelector('[data-lfpanel="cat"]');
+        if(pn && !pn.hasAttribute('hidden')) pn.setAttribute('hidden','');
+        const sb=document.querySelector('[data-lfsec="cat"]');
+        if(sb) sb.setAttribute('aria-expanded','false');
+      }
       renderLibrary();
     });
     return;
