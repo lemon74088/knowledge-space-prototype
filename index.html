@@ -287,7 +287,10 @@ a{color:var(--lav-deep);text-decoration:none}
 
 /* ===== 資料庫 ===== */
 .tcards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}
-.tcard{text-align:left;padding:14px 15px;border-radius:var(--r-md);background:var(--paper);border:1px solid var(--line);box-shadow:var(--sh);transition:.18s}
+.tcard{position:relative;text-align:left;padding:14px 15px;border-radius:var(--r-md);background:var(--paper);border:1px solid var(--line);box-shadow:var(--sh);transition:.18s}
+.tcard.on{border-color:rgba(103,85,222,.55);background:linear-gradient(180deg,rgba(103,85,222,.075),rgba(103,85,222,.02));box-shadow:0 6px 18px -8px rgba(103,85,222,.4)}
+.tcard .tck{position:absolute;top:9px;right:9px;width:20px;height:20px;border-radius:50%;background:var(--lav);color:#fff;display:grid;place-items:center;box-shadow:0 2px 6px rgba(103,85,222,.35)}
+.tcard .tck svg{width:13px;height:13px}
 .tcard:hover{transform:translateY(-2px);box-shadow:var(--sh-lift)}
 .tcard .ico{width:33px;height:33px;border-radius:10px;display:grid;place-items:center;margin-bottom:9px}
 .tcard .ico svg{width:18px;height:18px}
@@ -410,7 +413,11 @@ a{color:var(--lav-deep);text-decoration:none}
 .icon-btn.on{background:var(--mist);color:var(--lav-deep);border-color:rgba(103,85,222,.34)}
 .row.sel-on{background:var(--mist2)}
 .row.sel-on:hover{background:var(--mist2)}
-.cat-row{display:flex;align-items:center;border-bottom:1px solid var(--line2)}
+.cat-row{display:flex;align-items:center;border-bottom:1px solid var(--line2);transition:background .16s}
+.cat-row.on{background:rgba(103,85,222,.06)}
+.cat-row.on .row-main b{color:var(--lav-deep)}
+.cat-ck{width:19px;height:19px;border-radius:50%;background:var(--lav);color:#fff;display:grid;place-items:center;flex:none}
+.cat-ck svg{width:12px;height:12px}
 .cat-row:last-child{border-bottom:0}
 .cat-open{flex:1;min-width:0;display:flex;align-items:center;gap:13px;padding:13px 16px;text-align:left;transition:background .15s}
 .cat-open:hover{background:#FBFAFE}
@@ -707,6 +714,7 @@ body.blkdrag #edBody{touch-action:none}
 .lf-chip{flex:none;display:inline-flex;align-items:center;gap:4px;background:var(--mist);color:var(--lav-deep);border:0;border-radius:7px;padding:4px 9px;font-size:10.5px;font-weight:600;min-height:24px}
 .lf-chip::after{content:'✕';font-size:9px;opacity:.55;margin-left:2px}
 .lf-chip:hover{background:var(--mist2)}
+.lf-more{flex:none;font-size:10px;color:var(--ink3);font-weight:600;padding-left:1px}
 .lf-none{font-size:11px;color:var(--ink4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lf-arr{flex:none;color:var(--ink4);transition:transform .22s}
 .lf-seg[aria-expanded="true"] .lf-arr{transform:rotate(180deg)}
@@ -814,7 +822,7 @@ body.blkdrag #edBody{touch-action:none}
           <stop stop-color="#8E7DF2"/><stop offset="1" stop-color="#5A47D6"/>
         </linearGradient></defs>
       </svg>
-      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1 · r18</span></div>
+      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1 · r19</span></div>
       <button class="rail-toggle" id="railToggle" aria-label="收合側欄" title="收合側欄">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 6.5L9 12l5.5 5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
@@ -990,10 +998,12 @@ body.blkdrag #edBody{touch-action:none}
             <svg class="lf-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="13" height="13"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
           </div>
-          <div class="lf-panel" data-lfpanel="type" hidden><div class="tcards" id="typeCards"></div></div>
+          <div class="lf-panel" data-lfpanel="type" hidden>
+            <div class="block" style="padding-bottom:0"><div class="block-head"><h2>資料類型<em>可複選 · 再點取消</em></h2></div></div>
+            <div class="tcards" id="typeCards"></div></div>
           <div class="lf-panel" data-lfpanel="cat" hidden>
             <div class="block">
-              <div class="block-head"><h2>我的分類<em>依筆數排序</em></h2></div>
+              <div class="block-head"><h2>我的分類<em>可複選 · 依筆數排序</em></h2></div>
               <div class="rows" id="catRows"></div>
             </div>
           </div>
@@ -1104,7 +1114,7 @@ body.blkdrag #edBody{touch-action:none}
 
         <div class="sgroup">
           <h3>關於</h3>
-          <div class="srow"><div class="s-main"><b>Knowledge Space · 原型 V0.1 · r18</b><span>單檔 HTML + IndexedDB，原生 JS</span></div><span class="s-val">2026-11-12</span></div>
+          <div class="srow"><div class="s-main"><b>Knowledge Space · 原型 V0.1 · r19</b><span>單檔 HTML + IndexedDB，原生 JS</span></div><span class="s-val">2026-11-12</span></div>
           <div class="srow"><div class="s-main"><b>正式版技術棧</b><span>React · TypeScript · Vite · Dexie · Orama · XYFlow · OpenCC</span></div><span class="s-val" style="color:var(--ink4)">規劃中</span></div>
         </div>
         <div class="hintline">提醒：iPhone Safari 若長期未開啟，可能回收網站資料。備份是唯一保險，請定期匯出。</div>
@@ -1531,6 +1541,7 @@ function SEED(){
    ========================================================= */
 const state={
   notes:[], view:'home', notesFilter:'全部', libFilter:'全部', catFilter:null, tagFilter:null,
+  libTypes:[], libCats:[], libTags:[],
   graphMode:'radial', currentNote:null, saveTimer:null, dirty:false,
   searchQ:'', searchType:'全部', idxCache:new Map(), templates:[], htmlEdit:null,
   selMode:false, selView:null, selected:{}, lastDeleted:null, depth:0, noteId:null, types:[]
@@ -2078,9 +2089,13 @@ function notesList(){
   }).sort((a,b)=>b.updatedAt-a.updatedAt);
 }
 function libList(){
-  return (state.libFilter==='全部' ? state.notes : state.notes.filter(n=>n.type===state.libFilter))
-    .filter(n=> state.tagFilter ? ((n.tags||[]).indexOf(state.tagFilter)>=0) : true)
-    .slice().sort((a,b)=>b.updatedAt-a.updatedAt);
+  const ts=state.libTypes||[], cs=state.libCats||[], tg=state.libTags||[];
+  return state.notes.filter(function(n){
+    if(ts.length && ts.indexOf(n.type)<0) return false;
+    if(cs.length && cs.indexOf(n.category||'未分類')<0) return false;
+    if(tg.length && !(n.tags||[]).some(function(t){ return tg.indexOf(t)>=0; })) return false;
+    return true;
+  }).slice().sort(function(a,b){ return b.updatedAt-a.updatedAt; });
 }
 function allTags(){
   const m={};
@@ -2219,6 +2234,7 @@ async function renameCategory(from,to){
   list.forEach(function(n){ n.category=to; n.updatedAt=Date.now(); });
   await Store.bulk(list.map(n=>JSON.parse(JSON.stringify(n))));
   if(state.catFilter===from) state.catFilter=to;
+  if(state.libCats && state.libCats.indexOf(from)>=0) state.libCats=state.libCats.map(function(x){ return x===from?to:x; });
   closeSheet(); renderLibrary(); renderNotes(); renderHome();
   toast('已改名為「'+to+'」 · '+list.length+' 筆');
 }
@@ -2227,6 +2243,7 @@ async function deleteCategory(name){
   list.forEach(function(n){ n.category='未分類'; n.updatedAt=Date.now(); });
   await Store.bulk(list.map(n=>JSON.parse(JSON.stringify(n))));
   if(state.catFilter===name) state.catFilter=null;
+  if(state.libCats) state.libCats=state.libCats.filter(function(x){ return x!==name; });
   if(state.libFilter && state.libFilter!=='全部'){ /* 類型篩選不受影響 */ }
   closeSheet(); renderLibrary(); renderNotes(); renderHome();
   toast('已刪除分類「'+name+'」，'+list.length+' 筆移到未分類');
@@ -2275,9 +2292,10 @@ function renderLibrary(){
   };
   const GENERIC='<path d="M4 7h16v13H4z" stroke-linecap="round"/><path d="M7 7V4h10v3" stroke-linecap="round"/>';
   $('#typeCards').innerHTML = state.types.map(function(ty){
-    const t=ty.name, on=state.libFilter===t;
+    const t=ty.name, on=(state.libTypes||[]).indexOf(t)>=0;
     const col=typeColor(t);
-    return '<button class="tcard" data-libtype="'+esc(t)+'" style="'+(on?'outline:2px solid rgba(103,85,222,.3);outline-offset:-2px':'')+'">'+
+    return '<button class="tcard'+(on?' on':'')+'" data-libtype="'+esc(t)+'" aria-pressed="'+(on?'true':'false')+'">'+
+      (on?'<span class="tck">'+svgIco('<path d="M9.6 12.6l2 2 3.4-4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.1"/>')+'</span>':'')+
       '<span class="ico" style="background:'+col+'1f;color:'+col+'">'+svgIco(icons[t]||GENERIC)+'</span>'+
       '<b>'+esc(t)+'</b><span style="display:flex;align-items:baseline;gap:4px;margin-top:5px">'+
       '<em>'+counts[t]+'</em><small>筆</small></span></button>';
@@ -2290,32 +2308,34 @@ function renderLibrary(){
   state.notes.forEach(n=>{ const k=n.category||'未分類'; cats[k]=(cats[k]||0)+1; });
   const catList=Object.keys(cats).sort((a,b)=>cats[b]-cats[a]);
   $('#catRows').innerHTML = catList.map(function(k){
-    return '<div class="cat-row">'+
-      '<button class="cat-open" data-cat="'+esc(k)+'"><span class="row-ico ico-lav">'+
+    const on=(state.libCats||[]).indexOf(k)>=0;
+    return '<div class="cat-row'+(on?' on':'')+'">'+
+      '<button class="cat-open" data-cat="'+esc(k)+'" aria-pressed="'+(on?'true':'false')+'"><span class="row-ico ico-lav">'+
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="16" height="16"><path d="M4 7h7l2 2h7v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7Z" stroke-linecap="round"/></svg>'+
       '</span><span class="row-main"><b>'+esc(k)+'</b><span>'+cats[k]+' 筆資料</span></span>'+
-      '<span class="row-end">'+svgIco('<path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-width="1.6"/>')+'</span></button>'+
+      '<span class="row-end">'+(on?'<span class="cat-ck">'+svgIco('<path d="M9.6 12.6l2 2 3.4-4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>')+'</span>':'')+'</span></button>'+
       '<button class="cat-more" data-catedit="'+esc(k)+'" aria-label="分類設定">'+
         svgIco('<circle cx="6" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18" cy="12" r="1.7"/>')+
       '</button></div>';
   }).join('') || '<div class="empty">尚無分類</div>';
 
   const filtered = libList();
-  /* 三列摘要：類型 / 分類 / 標籤 各自顯示目前狀態 */
+  /* 三列摘要：類型 / 分類 / 標籤 各自顯示目前狀態（皆可複選） */
+  const sumHTML=function(arr, emptyText, prefix){
+    if(!arr.length) return '<span class="lf-none">'+emptyText+'</span>';
+    const label = arr.length>1 ? (arr.length+' 個') : (prefix==='tag'?'#'+arr[0]:arr[0]);
+    return '<button class="lf-chip" data-lfclear="'+prefix+'" title="點擊清除此段篩選">'+esc(label)+'</button>';
+  };
   const st=$('#lfSumType');
-  if(st) st.innerHTML = (state.libFilter && state.libFilter!=='全部')
-    ? '<button class="lf-chip" data-lfclear="type">'+esc(state.libFilter)+'</button>'
-    : '<span class="lf-none">全部</span>';
+  if(st) st.innerHTML = sumHTML(state.libTypes||[], '全部', 'type');
   const sc=$('#lfSumCat');
-  if(sc) sc.innerHTML = '<span class="lf-none">'+catList.length+' 個</span>';
+  if(sc) sc.innerHTML = sumHTML(state.libCats||[], catList.length+' 個', 'cat');
   const sg=$('#lfSumTag');
-  if(sg) sg.innerHTML = state.tagFilter
-    ? '<button class="lf-chip" data-lfclear="tag">#'+esc(state.tagFilter)+'</button>'
-    : '<span class="lf-none">'+allTags().length+' 個</span>';
-  /* 有篩選的段亮金色提示（與收藏金同色系） */
-  const bt=$('[data-lfsec="type"]'); if(bt) bt.classList.toggle('f-on', !!(state.libFilter && state.libFilter!=='全部'));
-  const bc=$('[data-lfsec="cat"]');  if(bc) bc.classList.toggle('f-on', false);
-  const bg=$('[data-lfsec="tag"]');  if(bg) bg.classList.toggle('f-on', !!state.tagFilter);
+  if(sg) sg.innerHTML = sumHTML(state.libTags||[], allTags().length+' 個', 'tag');
+  /* 有篩選的段亮色提示 */
+  const bt=$('[data-lfsec="type"]'); if(bt) bt.classList.toggle('f-on', !!(state.libTypes||[]).length);
+  const bc=$('[data-lfsec="cat"]');  if(bc) bc.classList.toggle('f-on', !!(state.libCats||[]).length);
+  const bg=$('[data-lfsec="tag"]');  if(bg) bg.classList.toggle('f-on', !!(state.libTags||[]).length);
   /* 顯示模式選中狀態 */
   const mode=state.libMode||'card';
   $$('#libMode .lm-opt').forEach(function(b){ b.classList.toggle('on', b.dataset.lmode===mode); });
@@ -2324,15 +2344,16 @@ function renderLibrary(){
     const addChip='<button class="tchip" data-tagwalladd="1" style="border-style:dashed;background:var(--lav2);color:var(--lav-deep)">＋ 標籤</button>';
     if(!ts.length) return addChip+'<span style="font-size:11.5px;color:var(--ink3);align-self:center">尚無標籤，點「＋ 標籤」可批次為資料加上標籤</span>';
     return addChip+ts.map(function(x){
-      return '<button class="tchip'+(state.tagFilter===x.t?' on':'')+'" data-tagfilter="'+esc(x.t)+'">#'+esc(x.t)+'<span>'+x.n+'</span></button>';
+      return '<button class="tchip'+((state.libTags||[]).indexOf(x.t)>=0?' on':'')+'" data-tagfilter="'+esc(x.t)+'">#'+esc(x.t)+'<span>'+x.n+'</span></button>';
     }).join('');
   })();
-  $('#tagFilterHint').textContent = state.tagFilter ? '點已選標籤取消' : '點標籤可篩選';
+  $('#tagFilterHint').textContent = (state.libTags||[]).length ? '可再點其他標籤並列' : '可複選，點標籤篩選';
   const sel=selActive('library');
   $('#btnSelLib').classList.toggle('on', !!sel);
   $('#btnSelLib').setAttribute('aria-pressed', sel?'true':'false');
-  $('#libListTitle').textContent = (state.tagFilter ? '#'+state.tagFilter : (state.libFilter==='全部' ? '全部資料' : state.libFilter+'資料'));
-  $('#libFilterHint').textContent = state.tagFilter ? (filtered.length+' 筆 · 點標籤取消') : (state.libFilter==='全部' ? '點上方卡片可篩選' : '再次點卡片取消篩選');
+  const anyFilter=(state.libTypes||[]).length || (state.libCats||[]).length || (state.libTags||[]).length;
+  $('#libListTitle').textContent = anyFilter ? '篩選結果' : '全部資料';
+  $('#libFilterHint').textContent = anyFilter ? (filtered.length+' 筆 · 類型／分類／標籤都可複選') : '點上方卡片與分類即可複選篩選';
   /* 依類型分組；顯示模式：卡片格（kittenjam 式）／清單列／精簡列 */
   const lmode=state.libMode||'card';
   const lgroups={};
@@ -2347,7 +2368,7 @@ function renderLibrary(){
     }
     return head+'<div class="lgrid">'+lgroups[t].map(function(n){ return cardHTML(n, sel); }).join('')+'</div>';
   }).join('');
-  $('#libRows').innerHTML = secs || '<div class="empty">此類型尚無資料</div>';
+  $('#libRows').innerHTML = secs || '<div class="empty"><b>此篩選組合尚無資料</b>可再點其他類型／分類／標籤，或取消篩選</div>';
   syncSelUI();
 }
 
@@ -2775,6 +2796,7 @@ async function resetAll(){
   state.notes=[]; state.templates=[]; state.research=[]; state.researchMeta={title:'研究中心', sub:''};
   state.idxCache.clear();
   state.notesFilter='全部'; state.libFilter='全部'; state.catFilter=null; state.tagFilter=null;
+  state.libTypes=[]; state.libCats=[]; state.libTags=[];
   await Store.metaSet('types', TYPE_DEFAULTS.map(function(t){ return {name:t.name,color:t.color}; }));
   await Store.metaSet('templates', []);
   await Store.metaSet('research', []);
@@ -3726,7 +3748,9 @@ document.addEventListener('click', async function(e){
   if(lfc){
     const k=lfc.dataset.lfclear;
     flipList($('#libRows'), function(){
-      if(k==='type') state.libFilter='全部'; else state.tagFilter=null;
+      if(k==='type') state.libTypes=[];
+      else if(k==='cat') state.libCats=[];
+      else state.libTags=[];
       renderLibrary();
     });
     return;
@@ -3755,14 +3779,11 @@ document.addEventListener('click', async function(e){
   }
   const lb=e.target.closest('[data-libtype]');
   if(lb){ const t=lb.dataset.libtype; const rows=$('#libRows');
-    /* r11：選完自動收合類型面板，清單就在膠囊列正下方，不需捲動 */
     const apply=function(){
-      state.libFilter = state.libFilter===t ? '全部' : t;
+      const arr=state.libTypes||(state.libTypes=[]);
+      const i=arr.indexOf(t);
+      if(i>=0) arr.splice(i,1); else arr.push(t);
       renderLibrary();
-      const pn=document.querySelector('[data-lfpanel="type"]');
-      if(pn && !pn.hasAttribute('hidden')) pn.setAttribute('hidden','');
-      const sb=document.querySelector('[data-lfsec="type"]');
-      if(sb) sb.setAttribute('aria-expanded','false');
     };
     flipList(rows, apply);
     return; }
@@ -3776,14 +3797,28 @@ document.addEventListener('click', async function(e){
   if(nntag){ const el=$('#nnTags'); if(el){ const t=nntag.dataset.nnaddtag; el.value=el.value? (el.value.replace(/[,\s]+$/,'')+', #'+t) : '#'+t; } return; }
   const tgf=e.target.closest('[data-tagfilter]');
   if(tgf){ const t=tgf.dataset.tagfilter;
-    flipList($('#libRows'), function(){ state.tagFilter = state.tagFilter===t ? null : t; renderLibrary(); });
+    flipList($('#libRows'), function(){
+      const arr=state.libTags||(state.libTags=[]);
+      const i=arr.indexOf(t);
+      if(i>=0) arr.splice(i,1); else arr.push(t);
+      renderLibrary();
+    });
     return; }
   const tagpick=e.target.closest('[data-tagpick]');
   if(tagpick){ const el=$('#tagInput'); if(el){ el.value=tagpick.dataset.tagpick; } return; }
   const tagdel=e.target.closest('[data-tagdel]');
   if(tagdel){ removeTag(tagdel.dataset.tagdel); return; }
   const cat=e.target.closest('[data-cat]');
-  if(cat){ state.catFilter=cat.dataset.cat; state.notesFilter='全部'; go('notes'); return; }
+  if(cat){
+    const name=cat.dataset.cat;
+    flipList($('#libRows'), function(){
+      const arr=state.libCats||(state.libCats=[]);
+      const i=arr.indexOf(name);
+      if(i>=0) arr.splice(i,1); else arr.push(name);
+      renderLibrary();
+    });
+    return;
+  }
   const edcat=e.target.closest('[data-edcat]');
   if(edcat){ openCatSheet(); return; }
   const edtype=e.target.closest('[data-edtype]');
@@ -3848,7 +3883,7 @@ document.addEventListener('click', async function(e){
   const gt=e.target.closest('.gtabs button');
   if(gt){ state.graphMode=gt.dataset.g; renderGraph(); return; }
   const rg=e.target.closest('[data-rgo]');
-  if(rg){ if(rg.dataset.rgo==='lib'){ state.libFilter=rg.dataset.rf; go('library'); } else { go('search'); $('#qInput').value=''; renderSearch(); $('#qInput').focus(); } return; }
+  if(rg){ if(rg.dataset.rgo==='lib'){ state.libTypes=[rg.dataset.rf]; state.libCats=[]; state.libTags=[]; go('library'); } else { go('search'); $('#qInput').value=''; renderSearch(); $('#qInput').focus(); } return; }
   const resedit=e.target.closest('[data-resedit]');
   if(resedit){ state.researchEdit=!state.researchEdit; renderResearch(); toast(state.researchEdit?'編輯中：直接改名稱即可':'已儲存研究線'); return; }
   const resdel=e.target.closest('[data-resdel]');
