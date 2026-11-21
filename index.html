@@ -280,6 +280,12 @@ a{color:var(--lav-deep);text-decoration:none}
 .res-h b{font-size:14px;font-weight:600;letter-spacing:.02em}
 .res-b{padding:6px 14px 11px;font-size:12.5px;color:var(--ink2);line-height:1.72}
 .res-b mark{background:rgba(255,214,120,.48);color:var(--ink);padding:0 1px;border-radius:3px;font-weight:600}
+.s-hist{display:flex;flex-wrap:wrap;gap:6px;padding:0 2px 2px}
+.s-hist .chip{font-size:11.5px;padding:5px 10px;background:#fff;border:1px solid var(--line);color:var(--ink2);border-radius:99px;cursor:pointer}
+.s-hist .chip:hover{border-color:var(--lav2);color:var(--lav-deep);background:var(--mist)}
+.s-hist .lbl{font-size:11px;color:var(--ink4);letter-spacing:.04em;align-self:center;margin-right:2px}
+::highlight(ks-search){background:rgba(255,214,120,.55);color:var(--ink)}
+[data-savetpl],[data-del],[data-ins],[data-bmore]{touch-action:manipulation}
 .res-f{display:flex;align-items:center;gap:10px;padding:8px 14px;border-top:1px solid var(--line2);font-size:10.5px;color:var(--ink3);background:#FCFBFE}
 .res-f .hit{color:var(--clay)}
 .empty{padding:44px 20px;text-align:center;color:var(--ink3);font-size:12.5px;line-height:1.9}
@@ -849,7 +855,7 @@ body.blkdrag #edBody{touch-action:none}
           <stop stop-color="#8E7DF2"/><stop offset="1" stop-color="#5A47D6"/>
         </linearGradient></defs>
       </svg>
-      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1 · r26</span></div>
+      <div class="rail-txt"><b>Knowledge Space</b><span>個人知識 · 原型 V0.1 · r27</span></div>
       <button class="rail-toggle" id="railToggle" aria-label="收合側欄" title="收合側欄">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 6.5L9 12l5.5 5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
@@ -962,6 +968,7 @@ body.blkdrag #edBody{touch-action:none}
             <button class="sclear" id="qClear" style="display:none" aria-label="清除">✕</button>
           </div>
           <div class="chipbar" id="typeChips"></div>
+          <div class="s-hist" id="sHist"></div>
           <div class="s-meta">
             <span id="sCount">輸入關鍵字開始搜尋</span>
             <span class="s-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="11" height="11"><path d="M4 7h16M4 12h10M4 17h13" stroke-linecap="round"/></svg>繁簡雙索引</span>
@@ -1146,7 +1153,7 @@ body.blkdrag #edBody{touch-action:none}
 
         <div class="sgroup">
           <h3>關於</h3>
-          <div class="srow"><div class="s-main"><b>Knowledge Space · 原型 V0.1 · r26</b><span>單檔 HTML + IndexedDB，原生 JS</span></div><span class="s-val">2026-11-12</span></div>
+          <div class="srow"><div class="s-main"><b>Knowledge Space · 原型 V0.1 · r27</b><span>單檔 HTML + IndexedDB，原生 JS</span></div><span class="s-val">2026-11-12</span></div>
           <div class="srow"><div class="s-main"><b>正式版技術棧</b><span>React · TypeScript · Vite · Dexie · Orama · XYFlow · OpenCC</span></div><span class="s-val" style="color:var(--ink4)">規劃中</span></div>
         </div>
         <div class="hintline">提醒：iPhone Safari 若長期未開啟，可能回收網站資料。備份是唯一保險，請定期匯出。</div>
@@ -1581,7 +1588,7 @@ const state={
   notes:[], view:'home', notesFilter:'全部', libFilter:'全部', catFilter:null, tagFilter:null,
   libTypes:[], libCats:[], libTags:[], libMulti:false,
   graphMode:'radial', currentNote:null, saveTimer:null, dirty:false,
-  searchQ:'', searchType:'全部', idxCache:new Map(), templates:[], htmlEdit:null,
+  searchQ:'', searchType:'全部', idxCache:new Map(), templates:[], htmlEdit:null, searchHistory:[], searchHl:null,
   selMode:false, selView:null, selected:{}, lastDeleted:null, depth:0, noteId:null, types:[]
 };
 
@@ -1787,9 +1794,42 @@ document.addEventListener('click', function(e){
   bodyEl.addEventListener('input', function(e){
     const el=e.target.closest ? e.target.closest('[contenteditable][data-bt]') : null;
     if(!el) return;
+    if(state.searchHl) clearSearchHl();
     if(e.isComposing || composing){ pendingEl=el; return; }
     mdConvert(el);
   });
+  /* 雙擊 HTML 區塊直接進原始碼編輯 */
+  bodyEl.addEventListener('dblclick', function(e){
+    const h=e.target.closest ? e.target.closest('.blk-html') : null;
+    if(!h) return;
+    const i=+h.dataset.bi;
+    const note=state.currentNote; if(!note || !note.blocks[i]) return;
+    if(note.blocks[i].t!=='html') return;
+    harvest();
+    state.htmlEdit=i;
+    renderEd(note);
+    const ta=$('#edBody .html-src');
+    if(ta){ ta.focus(); try{ ta.setSelectionRange(ta.value.length,ta.value.length); }catch(err){} }
+  });
+  /* 外來文字貼上：一律轉純文字，沿用本站字級、顏色與段距 */
+  function plainPaste(e){
+    const el=e.target.closest ? e.target.closest('[contenteditable][data-bt]') : null;
+    if(!el) return;
+    const bt=el.dataset.bt;
+    if(bt==='table'||bt==='html') return;
+    const cd=e.clipboardData||window.clipboardData;
+    if(!cd) return;
+    e.preventDefault();
+    let txt=cd.getData('text/plain')||'';
+    txt=String(txt).replace(/\r\n?/g,'\n').replace(/\u00a0/g,' ').replace(/[\u200b-\u200d\ufeff]/g,'');
+    txt=txt.split('\n').map(function(l){ return l.replace(/[ \t]+$/,''); }).join('\n').replace(/\n{3,}/g,'\n\n');
+    if(!txt) return;
+    try{ document.execCommand('insertText', false, txt); }
+    catch(err){ el.textContent=(el.textContent||'')+txt; }
+    scheduleSave();
+    toast('已貼上純文字，格式與顏色已統一');
+  }
+  bodyEl.addEventListener('paste', plainPaste);
   bodyEl.addEventListener('keydown', function(e){
     if(e.isComposing || e.keyCode===229) return;
     if(e.key!=='Enter' || e.shiftKey) return;
@@ -1923,7 +1963,18 @@ document.addEventListener('click', async function(e){
       toggleSel(openEl.dataset.open);
       return;
     }
+    state.searchHl = openEl.dataset.hl ? decodeURIComponent(openEl.dataset.hl) : null;
+    if(openEl.dataset.hl) pushSearchHistory(state.searchHl);
     go('note',{id:openEl.dataset.open}); return;
+  }
+  const histEl=e.target.closest('[data-hist]');
+  if(histEl){
+    const q=decodeURIComponent(histEl.dataset.hist||'');
+    $('#qInput').value=q; renderSearch();
+    const inp=$('#qInput'); inp.focus();
+    try{ inp.setSelectionRange(q.length,q.length); }catch(err){}
+    pushSearchHistory(q);
+    return;
   }
   const selall=e.target.closest('[data-selall]');
   if(selall){
@@ -2113,6 +2164,17 @@ function searchNotes(q, type){
   out.sort(function(a,b){ return b.count-a.count || b.note.updatedAt-a.note.updatedAt; });
   return out;
 }
+function persistSearchHistory(){
+  try{ Store.metaSet('searchHistory', state.searchHistory||[]); }catch(err){}
+}
+function pushSearchHistory(q){
+  q=String(q||'').trim(); if(!q) return;
+  const h=(state.searchHistory||[]).slice();
+  const i=h.indexOf(q); if(i>=0) h.splice(i,1);
+  h.unshift(q);
+  state.searchHistory=h.slice(0,8);
+  persistSearchHistory();
+}
 function renderSearch(){
   const chips=$('#typeChips');
   const types=['全部','筆記','中藥','方劑','醫案','文獻','日記','網頁'];
@@ -2121,6 +2183,14 @@ function renderSearch(){
   }).join('');
   const q=$('#qInput').value;
   $('#qClear').style.display = q ? 'grid' : 'none';
+  const hist=$('#sHist');
+  if(hist){
+    hist.innerHTML = (!q.trim() && (state.searchHistory||[]).length)
+      ? '<span class="lbl">搜尋紀錄</span>'+state.searchHistory.map(function(t){
+          return '<button class="chip" data-hist="'+encodeURIComponent(t)+'">'+esc(t)+'</button>';
+        }).join('')
+      : '';
+  }
   const list=searchNotes(q, state.searchType);
   if(!q.trim()){
     $('#sCount').textContent='輸入關鍵字開始搜尋';
@@ -2138,7 +2208,7 @@ function renderSearch(){
       '<div class="res-f"><span>'+esc(r.note.category||'未分類')+'</span>'+
       '<span class="hit">命中 '+r.count+' 次</span>'+
       '<span style="margin-left:auto">'+fmtRel(r.note.updatedAt)+'</span>'+
-      '<button class="mini" data-open="'+r.note.id+'" style="font-size:10.5px;color:var(--lav-deep);font-weight:600;padding:0 4px;background:none">開啟</button></div></div>';
+      '<button class="mini" data-open="'+r.note.id+'" data-hl="'+encodeURIComponent(String(r.term||q.trim()))+'" style="font-size:10.5px;color:var(--lav-deep);font-weight:600;padding:0 4px;background:none">開啟</button></div></div>';
   }).join('') : '<div class="empty"><b>換個說法試試</b>可只輸入單一詞，例如「淫羊藿」「四逆」「傷寒」。地區用語（軟體／软件）需詞庫對應。</div>';
 }
 
@@ -3865,6 +3935,42 @@ async function flushSave(){
   $('#edTime').textContent='加入 '+fmtAdd(note.createdAt).replace('加入 ','')+' · 更新 '+fmtRel(note.updatedAt);
   $('#edWords').textContent=textOf(note).replace(/\s/g,'').length+' 字';
 }
+async function clearSearchHl(){
+  state.searchHl=null;
+  if(window.CSS && CSS.highlights){ try{ CSS.highlights.delete('ks-search'); }catch(err){} }
+}
+function applySearchHl(term){
+  if(!window.CSS || !CSS.highlights || typeof Highlight!=='function') return;
+  try{ CSS.highlights.delete('ks-search'); }catch(err){}
+  const raw=String(term||'').trim(); if(!raw) return;
+  const body=$('#edBody'); if(!body) return;
+  const vars=[raw];
+  try{
+    const s=toHans(raw).text, t=toHant(raw).text;
+    if(s && vars.indexOf(s)<0) vars.push(s);
+    if(t && vars.indexOf(t)<0) vars.push(t);
+  }catch(err){}
+  const ranges=[]; let first=null;
+  const walker=document.createTreeWalker(body, NodeFilter.SHOW_TEXT, null);
+  let node=null;
+  while((node=walker.nextNode())){
+    const txt=node.nodeValue||''; if(!txt) continue;
+    const low=txt.toLowerCase();
+    vars.forEach(function(v){
+      const needle=String(v).toLowerCase(); if(!needle) return;
+      let idx=low.indexOf(needle);
+      while(idx>=0){
+        const r=document.createRange();
+        r.setStart(node, idx); r.setEnd(node, idx+needle.length);
+        ranges.push(r); if(!first) first=r;
+        idx=low.indexOf(needle, idx+needle.length);
+      }
+    });
+  }
+  if(!ranges.length) return;
+  CSS.highlights.set('ks-search', new Highlight(...ranges));
+  try{ const el=first.startContainer.parentElement; if(el) el.scrollIntoView({block:'center',behavior:'smooth'}); }catch(err){}
+}
 async function loadNote(id){
   const note=state.notes.find(n=>n.id===id) || await Store.get(id);
   if(!note){ toast('找不到這篇筆記'); go('notes'); return; }
@@ -3872,6 +3978,7 @@ async function loadNote(id){
   const clean=pruneBlankBlocks(JSON.parse(JSON.stringify(note)));
   if(!clean.blocks || !clean.blocks.length) clean.blocks=[{t:'p',text:''}];
   renderEd(clean);
+  if(state.searchHl) setTimeout(function(){ applySearchHl(state.searchHl); }, 60);
 }
 function openNote(id){ go('note',{id:id}); }
 async function createNote(){
@@ -4300,7 +4407,23 @@ document.addEventListener('change', function(e){
   const it=researchLines()[+sel.dataset.resi];
   if(it){ it.type=sel.value; persistResearch(); renderResearch(); toast('已更新計數來源'); }
 });
-$('#qInput').addEventListener('input', function(){ renderSearch(); });
+$('#edTitle').addEventListener('paste', function(e){
+  e.preventDefault();
+  const cd=e.clipboardData||window.clipboardData; if(!cd) return;
+  const t=String(cd.getData('text/plain')||'').replace(/\s+/g,' ').trim();
+  if(!t) return;
+  try{ document.execCommand('insertText', false, t); }catch(err){}
+  scheduleSave();
+  toast('標題已貼上純文字');
+});
+$('#qInput').addEventListener('input', function(){
+  renderSearch();
+  if(state.qHistTimer) clearTimeout(state.qHistTimer);
+  state.qHistTimer=setTimeout(function(){
+    const q=$('#qInput').value.trim();
+    if(q.length>=1 && /^[\u4e00-\u9fa5A-Za-z0-9]+$/.test(q)) pushSearchHistory(q);
+  },900);
+});
 $('#qClear').addEventListener('click', function(){ $('#qInput').value=''; renderSearch(); $('#qInput').focus(); });
 $('#homeSearch').addEventListener('click', function(){ go('search'); });
 $('#btnBell').addEventListener('click', function(){ go('settings'); });
@@ -4547,6 +4670,9 @@ function applyRail(collapsed){
   if(!Array.isArray(tpl)) await Store.metaSet('templates', state.templates);
   const rl=await Store.metaGet('research');
   state.research = Array.isArray(rl) ? rl : [];
+  const sh=await Store.metaGet('searchHistory');
+  state.searchHistory = Array.isArray(sh) ? sh.slice(0,8) : [];
+  if(!Array.isArray(sh)) await Store.metaSet('searchHistory', state.searchHistory);
   const rm=await Store.metaGet('researchMeta');
   state.researchMeta = (rm && typeof rm==='object' && rm.title) ? rm : {title:'研究中心', sub:''};
   if(!Array.isArray(rl)) await persistResearch();
